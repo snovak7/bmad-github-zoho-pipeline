@@ -1,0 +1,109 @@
+{
+  "schema_version": 2,
+  "subject": "/var/home/simon/work/escendit/sandbox-bmad/skills/gzp-pipeline",
+  "generated": "2026-08-30T10:15:00+02:00",
+  "verdict": "All 6 findings from the 5-lens scan were fixed in this same build session — including one high-severity schema bug (open_time_log couldn't actually support the concurrent sessions issue-report.md promises) and one medium (current_task.step declared and branched on but never written). Post-fix, quick_validate/scan-scripts/prepass-workflow-integrity and all unit tests pass clean. The high-severity concurrency fix (enhancement-1) was independently re-verified against the shipped code on a follow-up pass — schema, commands, references, and tests all confirmed consistent, no regression.",
+  "grade": "excellent",
+  "summary": "gzp-pipeline is a lean, well-bounded single skill (SKILL.md at 1213 tokens, well under budget) with a clean intelligence/script boundary and no customization-surface issues. The Enhancement lens caught a real concurrency bug in the session-state schema before it could bite in production — primary-task and issue-task time-log sessions would have silently clobbered each other — which is now fixed with a task_id-keyed schema and dedicated open-time-log/close-time-log commands.",
+  "standards": {
+    "canon": "/var/home/simon/work/escendit/sandbox-bmad/.claude/skills/bmad-workflow-builder/references/prompt-quality-canon.md",
+    "principles": "/var/home/simon/work/escendit/sandbox-bmad/.claude/skills/bmad-workflow-builder/references/skill-quality-principles.md",
+    "scripts": "/var/home/simon/work/escendit/sandbox-bmad/.claude/skills/bmad-workflow-builder/references/script-standards.md"
+  },
+  "themes": [
+    {
+      "title": "Session-state schema didn't match the concurrency the prose promised",
+      "root_cause": "issue-report.md was written to describe a primary task and an issue task each holding their own independent time-log session, but the underlying session_state.py schema only had room for one open session at a time — the second open-time-log call would have silently overwritten the first.",
+      "finding_ids": ["enhancement-1"],
+      "action": "Rekey open_time_logs by task_id (done) so the schema can actually hold what the prose already claimed."
+    },
+    {
+      "title": "A resume-condition field that nothing ever wrote",
+      "root_cause": "current_task.step was reserved in the schema and read by SKILL.md's resume check, but no reference file's procedure ever called set on it, so that half of resume detection was permanently dead.",
+      "finding_ids": ["enhancement-2"],
+      "action": "Write current_task.step at each real checkpoint in task-loop.md (done): in_progress, pr_open_awaiting_merge, addressing_review_feedback."
+    },
+    {
+      "title": "Two small path/self-containment slips",
+      "root_cause": "A config path was written as a bare filename instead of the full {project-root} path (breaking the skill's own Resolution rules), and a carved reference file pointed back at SKILL.md for a rule instead of restating it, which breaks under context compaction.",
+      "finding_ids": ["architecture-1", "architecture-2"],
+      "action": "Fully qualify the config.user.yaml path; restate the GPG rule inline in task-loop.md. Both done."
+    }
+  ],
+  "strengths": [
+    "Clean intelligence/script boundary: session_state.py owns all deterministic state CRUD, judgment (feedback triage, ambiguity resolution, bot-finding verification) stays in prompts, and the wall-clock date call correctly stays inline bash rather than a needless script wrapper.",
+    "No customize.toml, by deliberate logged decision — the module-config read at activation is correctly not treated as a customization surface.",
+    "Progressive disclosure is sound: SKILL.md carries the overview, invariants, and routing table; capability-specific procedure is carved to references/ with no other back-references to SKILL.md remaining after the fix.",
+    "The six cross-cutting invariants (sole Zoho-writer, issues-aren't-work-items, one-task-at-a-time, GPG hard checkpoint, non-code skips GitHub Flow, never fabricate verification) correctly stay in SKILL.md rather than being buried in a reference only some branches would load."
+  ],
+  "recommendations": [
+    {
+      "rank": 1,
+      "action": "None outstanding — all 6 findings were fixed in this session. When live eval auth (ANTHROPIC_API_KEY) is available, run the staged evals/cases.json (baseline mode) and evals/queries.json (trigger mode) to get a real behavioral verdict beyond static analysis.",
+      "resolves": []
+    }
+  ],
+  "experience": {
+    "journeys": [
+      { "name": "Start a phase, work it to close", "steps": "Start a new phase (references/planning-phase.md) → Work a task through GitHub Flow or the non-code path (references/task-loop.md) → resume cleanly after an interruption via session-state.json" },
+      { "name": "Something breaks mid-task", "steps": "Report an issue (references/issue-report.md) → standalone Zoho task + independent time-log session, tracked separately from the primary task" }
+    ],
+    "headless": "No headless mode — interactive only by design, since GPG verification and merge confirmation are deliberate human-in-the-loop checkpoints on a skill driving real external systems."
+  },
+  "findings": [
+    {
+      "id": "enhancement-1",
+      "lens": "enhancement",
+      "severity": "high",
+      "title": "Add: concurrent-session support for session-state's single-slot open_time_log",
+      "location": "references/issue-report.md:11 vs scripts/session_state.py schema / references/time-log-session.md:19",
+      "evidence": "session-state's open_time_log was a single object, not keyed — issue-report.md promised the originating task's open session and a new issue-task's open session could coexist, but a second open-time-log call would silently overwrite the first, and the dangling-session check would misfire and force-close a still-legitimate session.",
+      "recommendation": "Fixed: open_time_logs is now a dict keyed by task_id, with dedicated open-time-log/close-time-log commands that fail loud on a duplicate open or a missing close target, so two tasks' sessions genuinely coexist."
+    },
+    {
+      "id": "enhancement-2",
+      "lens": "enhancement",
+      "severity": "medium",
+      "title": "Add: wire current_task.step, or drop it — it's declared and branched on but never written",
+      "location": "scripts/session_state.py schema and SKILL.md resume condition vs references/task-loop.md",
+      "evidence": "SKILL.md's resume logic branches on current_task.step being mid-flight, but no reference file ever set it — the field was permanently null.",
+      "recommendation": "Fixed: task-loop.md now sets current_task.step at in_progress, pr_open_awaiting_merge, and addressing_review_feedback checkpoints for both the code and non-code paths."
+    },
+    {
+      "id": "architecture-1",
+      "lens": "architecture",
+      "severity": "medium",
+      "title": "Unqualified .user.yaml path breaks Resolution rules",
+      "location": "SKILL.md On Activation step 1",
+      "evidence": "Config load referenced bare '.user.yaml' instead of the full {project-root}/_bmad/config.user.yaml path used everywhere else in the skill and by sibling skills sharing this config pattern.",
+      "recommendation": "Fixed: now reads {project-root}/_bmad/config.user.yaml explicitly."
+    },
+    {
+      "id": "architecture-2",
+      "lens": "architecture",
+      "severity": "low",
+      "title": "task-loop.md leans on SKILL.md for the GPG invariant",
+      "location": "references/task-loop.md step 5",
+      "evidence": "The GPG rule was referenced as 'see the GPG invariant in SKILL.md' instead of being restated, which breaks self-containment since SKILL.md can drop from context mid-flow.",
+      "recommendation": "Fixed: the operative rule (never override commit.gpgsign, never --no-gpg-sign, stop-and-ask on an unverifiable signature) is now stated inline."
+    },
+    {
+      "id": "leanness-1",
+      "lens": "leanness",
+      "severity": "low",
+      "title": "Invariants preamble narrates the system to itself rather than instructing",
+      "location": "SKILL.md Invariants intro sentence",
+      "evidence": "The framing clause ('what flaky looked like before this skill existed') described the skill's own history without changing how any of the six bullets are applied.",
+      "recommendation": "Fixed: trimmed to a plain lead-in; the bullets carry all the binding force."
+    },
+    {
+      "id": "leanness-2",
+      "lens": "leanness",
+      "severity": "low",
+      "title": "Duration-is-derived fact stated twice in time-log-session.md",
+      "location": "references/time-log-session.md",
+      "evidence": "The 'Zoho derives the duration, don't compute it yourself' fact was stated once in the opening paragraph and again as a bolded rule near the Stop step.",
+      "recommendation": "Fixed: kept only at the actionable point of use (the bolded Stop-step rule)."
+    }
+  ]
+}

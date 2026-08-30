@@ -1,0 +1,60 @@
+{
+  "scanner": "workflow-integrity-prepass",
+  "script": "prepass-workflow-integrity.py",
+  "version": "1.0.0",
+  "skill_path": "/var/home/simon/work/escendit/sandbox-bmad/skills/gzp-pipeline",
+  "timestamp": "2026-08-30T07:54:53.284640+00:00",
+  "status": "pass",
+  "metadata": {
+    "frontmatter": {
+      "name": "gzp-pipeline",
+      "description": "Configurable Zoho Projects + GitHub Flow task pipeline. Use when the user says \"start a new phase\", \"work the next task\", \"report an issue\", makes an ad hoc pipeline request, or references \"gzp-pipeline\"/\"Pipeline Forge\"."
+    },
+    "sections": [
+      {
+        "level": 2,
+        "title": "Overview",
+        "line": 8
+      },
+      {
+        "level": 2,
+        "title": "Resolution rules",
+        "line": 12
+      },
+      {
+        "level": 2,
+        "title": "On Activation",
+        "line": 18
+      },
+      {
+        "level": 2,
+        "title": "Invariants",
+        "line": 25
+      },
+      {
+        "level": 2,
+        "title": "Capabilities",
+        "line": 36
+      }
+    ],
+    "workflow_type": "simple-workflow"
+  },
+  "stage_summary": {
+    "total_stages": 0,
+    "referenced": [],
+    "actual": [],
+    "missing_stages": [],
+    "orphaned_stages": []
+  },
+  "prompt_details": [],
+  "issues": [],
+  "summary": {
+    "total_issues": 0,
+    "by_severity": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    }
+  }
+}

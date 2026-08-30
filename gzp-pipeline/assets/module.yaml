@@ -1,0 +1,30 @@
+code: gzp
+name: "Pipeline Forge"
+description: "Configurable Zoho Projects + GitHub Flow task pipeline: plans, tracks, and time-logs every phase of work in Zoho, drives implementation tasks through GitHub Flow per repo config, and handles ad hoc GitHub issues as standalone reporting artifacts."
+module_version: 1.0.0
+default_selected: false
+module_greeting: >
+  Pipeline Forge is ready. Say "start a new phase" to break your next chunk of work into a
+  tracked Zoho task list, or "work the next task" to pick up where you left off — every
+  segment gets its own time-log session, and resume always reads session-state.json first.
+
+  Run this again any time with `configure` to reconfigure, or edit _bmad/config.yaml /
+  config.user.yaml directly.
+
+gzp_mcp_name:
+  prompt: "Which Zoho Projects MCP server should this pipeline use for time-logging? (must expose time-log tools, e.g. add_time_log/update_single_time_log)"
+  default: ""
+  required: true
+  user_setting: true
+
+gzp_zoho_project_name:
+  prompt: "What is the Zoho Projects project name that this repo's work should be tracked against?"
+  default: ""
+  required: true
+
+gzp_default_bill_status:
+  prompt: "Default bill_status for time-log entries this pipeline creates (e.g. 'Non Billable', 'Billable')?"
+  default: "Non Billable"
+
+directories:
+  - "{project-root}/_bmad/memory/gzp-pipeline"
