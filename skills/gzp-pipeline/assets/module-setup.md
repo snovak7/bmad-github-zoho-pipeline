@@ -28,7 +28,7 @@ If the user provides arguments (e.g. `accept all defaults`, `--headless`, or inl
 
 Ask the user for values. Show defaults in brackets. Present all values together so the user can respond once with only the values they want to change (e.g. "change language to Swahili, rest are fine"). Never tell the user to "press enter" or "leave blank" — in a chat interface they must type something to respond.
 
-**Default priority** (highest wins): existing config values > `./assets/module.yaml` defaults.
+**Default priority** (highest wins): existing config values > per-module installer config, if present (`{project-root}/_bmad/{module-code}/config.yaml`, written by an external BMAD installer — read matching keys as defaults instead of re-asking) > `./assets/module.yaml` defaults.
 
 ### Core Config
 
