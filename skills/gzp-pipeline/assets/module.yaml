@@ -1,7 +1,7 @@
 code: gzp
 name: "Pipeline Forge"
 description: "Configurable Zoho Projects + GitHub Flow task pipeline: plans, tracks, and time-logs every phase of work in Zoho, drives implementation tasks through GitHub Flow per repo config, and handles ad hoc GitHub issues as standalone reporting artifacts."
-module_version: 1.1.2
+module_version: 1.2.0
 default_selected: false
 module_greeting: >
   Pipeline Forge is ready. Say "start a new phase" to break your next chunk of work into a
@@ -25,6 +25,13 @@ gzp_zoho_project_name:
 gzp_default_bill_status:
   prompt: "Default bill_status for time-log entries this pipeline creates (e.g. 'Non Billable', 'Billable')?"
   default: "Non Billable"
+
+gzp_github_issue_first:
+  prompt: >
+    Create a GitHub Issue first for every code-change task — opened before branching, linked
+    from the branch and PR, and auto-closed by the merge? (When off, tasks go straight to
+    branch and PR.)
+  default: true
 
 gzp_autotrack_bmad_build:
   prompt: >

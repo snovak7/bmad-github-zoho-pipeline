@@ -19,7 +19,7 @@
       "name": "gzp",
       "source": "./",
       "description": "Configurable Zoho Projects + GitHub Flow task pipeline: plans, tracks, and time-logs every phase of work in Zoho, drives implementation tasks through GitHub Flow per repo config, and handles ad hoc GitHub issues as standalone reporting artifacts.",
-      "version": "1.1.2",
+      "version": "1.2.0",
       "author": {
         "name": "Simon Novak"
       },

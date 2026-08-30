@@ -24,7 +24,7 @@ Schema (all keys always present; unset scalars are null):
     "zoho_user": {"zuid": int, "zpuid": str, "name": str}|null
   },
   "current_task_list": {"id": str|null, "name": str|null},
-  "current_task": {"id": str|null, "title": str|null, "step": str|null},
+  "current_task": {"id": str|null, "title": str|null, "step": str|null, "github_issue": int|null},
   "open_time_logs": {<task_id>: {"time_log_id": str, "started_at": str}, ...},
   "issue_tasks": [
     {"issue_number": int, "task_id": str, "time_log_id": str|null, "status": "open"|"closed"}
@@ -74,7 +74,7 @@ DEFAULT_STATE = {
         "zoho_user": None,
     },
     "current_task_list": {"id": None, "name": None},
-    "current_task": {"id": None, "title": None, "step": None},
+    "current_task": {"id": None, "title": None, "step": None, "github_issue": None},
     "open_time_logs": {},
     "issue_tasks": [],
 }

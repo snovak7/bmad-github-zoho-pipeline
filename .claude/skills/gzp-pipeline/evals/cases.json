@@ -6,7 +6,7 @@
       "the response describes creating a new Zoho task list for this phase before any code is written, rather than jumping straight into implementation",
       "the response breaks the phase into more than one task, and explicitly identifies at least one task as not touching code (e.g. the manual test write-up) and at least one as code-touching",
       "the response does not claim a Zoho task list, task, or time-log entry was actually created unless the transcript shows a tool call to a Zoho Projects MCP tool — if no such tool was available/called, the response says so explicitly instead of asserting success",
-      "the response does not describe opening a GitHub issue as the first step of the code-touching task's flow — GitHub Flow for a task goes straight to a branch/PR, no issue step"
+      "the response does not describe opening a GitHub issue as the first step of the code-touching task's flow — with gzp_github_issue_first unset in the fixture config, GitHub Flow for a task goes straight to a branch/PR, no issue step"
     ],
     "state_prefix": null,
     "files": ["_bmad/config.yaml"]
