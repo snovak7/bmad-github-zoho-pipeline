@@ -6,12 +6,14 @@ It acts as the operator of your repo's delivery pipeline: it plans work into a Z
 
 ## What it does
 
-- **Plans phases.** Breaks a chunk of work into a Zoho Projects task list under a logged Planning task.
+- **Plans phases.** Breaks a chunk of work into a Zoho Projects task list under a logged Planning task, and mirrors the breakdown into a local todo list for in-session visibility.
 - **Drives tasks end to end.** Each task moves through In Progress → PR opened → In Review → merge-verified → Closed.
+- **Self-assigns everything.** Every Zoho task it creates and every GitHub PR it opens is assigned to you automatically, with an appropriate label attached to the PR when one fits.
 - **Time-logs every segment.** Uses a paired start/stop pattern against Zoho's time-log API (Zoho has no live timer).
 - **Handles ad hoc requests and issues.** Small unplanned work and one-off "report an issue" flows are supported without forcing them into a task list.
 - **Resumes safely.** On activation it reads `session-state.json` first — never re-derives position from conversation history — and reports/resumes any task or time-log session left mid-flight.
 - **Never fabricates verification.** Status changes, merges, GPG signatures, and time-log entries must correspond to something actually checked or called.
+- **Can run itself invisibly inside `bmad-build`.** Optionally hooks into `bmad-build`'s activation and completion steps at install time, so build work gets tracked without ever saying "gzp-pipeline." See [Auto-tracking bmad-build](#auto-tracking-bmad-build).
 
 See [`gzp-pipeline/SKILL.md`](gzp-pipeline/SKILL.md) for the full activation flow, invariants, and capability map.
 
@@ -50,8 +52,23 @@ You'll be asked for:
 | `gzp_mcp_name` | Which Zoho Projects MCP server to use for time-logging |
 | `gzp_zoho_project_name` | The Zoho Projects project this repo's work is tracked against |
 | `gzp_default_bill_status` | Default bill status for time-log entries (defaults to "Non Billable") |
+| `gzp_autotrack_bmad_build` | Whether to auto-hook `bmad-build` (defaults to yes) — see [Auto-tracking bmad-build](#auto-tracking-bmad-build) |
 
 Setup writes shared config to `_bmad/config.yaml`, personal settings to `_bmad/config.user.yaml` (gitignore this), and registers the module in `_bmad/module-help.csv`.
+
+## Auto-tracking bmad-build
+
+If you use [`bmad-build`](https://github.com/bmad-code-org/BMAD-METHOD) to implement work and answer yes to `gzp_autotrack_bmad_build` during setup, Pipeline Forge writes a hook into `_bmad/custom/bmad-build.toml`:
+
+- **Before Build starts** (`activation_steps_prepend`) — hands off to gzp-pipeline to resume or start Zoho task status + time-log tracking.
+- **After Build completes** (`on_complete`) — hands off to gzp-pipeline to drive the change through GitHub Flow (branch, commit, push, self-assigned PR with a label), update the Zoho task's status, and close the time-log session.
+
+This means `bmad-build` runs get tracked automatically, without ever typing "gzp-pipeline." A few things to know:
+
+- **It's skipped, not forced.** If `bmad-build` isn't installed in the project yet, the write is a no-op — re-run `configure` after installing it, or the next `configure` run picks it up.
+- **It won't clobber your own customizations.** If `_bmad/custom/bmad-build.toml` already has a different `on_complete` override, that field is left alone and setup reports a conflict for you to resolve by hand (the `activation_steps_prepend` entry is additive, so it's written either way).
+- **Answering no later removes it cleanly.** Re-running `configure` and switching the answer to no strips only the entries this module added — anything else in that file is untouched.
+- **Prefer it off, or want it elsewhere?** Answer no during setup, or edit `_bmad/custom/bmad-build.toml` directly — see the [How to Customize BMad guide](https://docs.bmad-method.org/how-to/customize-bmad/).
 
 ## Usage
 

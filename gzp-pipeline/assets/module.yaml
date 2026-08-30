@@ -26,5 +26,14 @@ gzp_default_bill_status:
   prompt: "Default bill_status for time-log entries this pipeline creates (e.g. 'Non Billable', 'Billable')?"
   default: "Non Billable"
 
+gzp_autotrack_bmad_build:
+  prompt: >
+    Automatically track bmad-build work through Pipeline Forge — Zoho task status, time-log
+    sessions, and the GitHub Flow handoff — without ever needing to say "gzp-pipeline"? This
+    writes hooks into _bmad/custom/bmad-build.toml (activation_steps_prepend + on_complete) if
+    bmad-build is installed in this project; skipped otherwise, and safe to answer yes even if
+    you later add bmad-build.
+  default: true
+
 directories:
   - "{project-root}/_bmad/memory/gzp-pipeline"

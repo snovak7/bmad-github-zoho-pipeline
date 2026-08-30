@@ -1,6 +1,6 @@
 # Work a task
 
-Set `session-state.current_task` to the task being worked (id, title) before doing anything else, so an interruption mid-task is always recoverable. `STATE` below stands for `{project-root}/_bmad/memory/gzp-pipeline/session-state.json`; `<task-id>` is `current_task.id`.
+Set `session-state.current_task` to the task being worked (id, title) before doing anything else, so an interruption mid-task is always recoverable. `STATE` below stands for `{project-root}/_bmad/memory/gzp-pipeline/session-state.json`; `<task-id>` is `current_task.id`. If a `TodoWrite` list from `references/planning-phase.md` is active for this phase, mark this task's item `in_progress` now too — and `completed` when the task closes at the end of either path below.
 
 ## Decide the branch first
 
@@ -45,7 +45,7 @@ Clear the current task: `uv run scripts/session_state.py clear-current-task --pa
 Not everything arrives as "start the next task from the list." A mid-session ask that doesn't fit an open task list — "merge these PRs", "fix Y real quick" — still needs a task and a time-log session *before* work starts, not skipped because it feels too small and not batched up as a retroactive log afterward. This is the exact failure mode the pipeline exists to prevent.
 
 1. If an existing open task list is genuinely the right home for it, add the task there. Otherwise create a small task list for it (e.g. "Repo maintenance: <short description>") rather than skipping list creation because it's "just one thing."
-2. Create the task, start a time-log session on it, *then* start the work.
+2. Create the task (self-assigned, same as any other — see Invariants in `SKILL.md`), start a time-log session on it, *then* start the work. Add it to the active `TodoWrite` mirror if one exists for this phase; otherwise a single-item list is fine.
 3. Run it through the normal lifecycle above (code or non-code path, whichever fits).
 
 If a session catches itself having skipped this, don't just apologize and move on — create the missed task(s) now, reconstruct the time as accurately as possible (commit timestamps, prior task's close time as an anchor), and note in the log that it's a retroactive entry.

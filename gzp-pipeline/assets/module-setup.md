@@ -64,6 +64,23 @@ Both scripts output JSON to stdout with results. If either exits non-zero, surfa
 
 Run `./scripts/merge-config.py --help` or `./scripts/merge-help-csv.py --help` for full usage.
 
+## Auto-Track bmad-build (Optional)
+
+If the collected `gzp_autotrack_bmad_build` answer is true, run:
+
+```bash
+uv run ./scripts/write-build-hook.py --target "{project-root}/_bmad/custom/bmad-build.toml" --bmad-build-customize-toml "{project-root}/.claude/skills/bmad-build/customize.toml" --action enable
+```
+
+(Resolve `{project-root}` to the actual project root, same as every other path argument above.)
+
+The script itself checks whether bmad-build is installed and no-ops (`status: "skipped"`) if it isn't — safe to run unconditionally on `true`, including on a project that adds bmad-build later and re-runs `configure`. Report the script's `status` to the user:
+- `"success"` — hook written, mention it in the confirmation summary.
+- `"skipped"` — bmad-build isn't installed; say auto-tracking will apply automatically once it is (re-run `configure` after installing it, or just answer this question again).
+- `"conflict"` — `activation_steps_prepend` got the gzp-pipeline entry, but `on_complete` in `_bmad/custom/bmad-build.toml` already holds a different custom instruction that wasn't overwritten. Show the user that existing `on_complete` value and ask whether to replace it manually or leave it (gzp-pipeline's completion handoff won't run automatically until it's resolved).
+
+If the answer is false and a prior run of this script already wrote the hook (reconfiguration flipping the choice from yes to no), instead run the same command with `--action disable` to cleanly remove it.
+
 ## Create Output Directories
 
 After writing config, create any output directories that were configured. For filesystem operations only (such as creating directories), resolve the `{project-root}` token to the actual project root and create each path-type value from `config.yaml` that does not yet exist — this includes `output_folder` and any module variable whose value starts with `{project-root}/`. The paths stored in the config files must continue to use the literal `{project-root}` token; only the directories on disk should use the resolved paths. Use `mkdir -p` or equivalent to create the full path.

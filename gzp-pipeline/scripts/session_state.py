@@ -20,7 +20,8 @@ Schema (all keys always present; unset scalars are null):
     "zoho_project_name": str|null,
     "status_option_ids": {<status label>: <option id>, ...},
     "repo_owner": str|null,
-    "repo_name": str|null
+    "repo_name": str|null,
+    "zoho_user": {"zuid": int, "zpuid": str, "name": str}|null
   },
   "current_task_list": {"id": str|null, "name": str|null},
   "current_task": {"id": str|null, "title": str|null, "step": str|null},
@@ -70,6 +71,7 @@ DEFAULT_STATE = {
         "status_option_ids": {},
         "repo_owner": None,
         "repo_name": None,
+        "zoho_user": None,
     },
     "current_task_list": {"id": None, "name": None},
     "current_task": {"id": None, "title": None, "step": None},
