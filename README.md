@@ -15,7 +15,7 @@ It acts as the operator of your repo's delivery pipeline: it plans work into a Z
 - **Never fabricates verification.** Status changes, merges, GPG signatures, and time-log entries must correspond to something actually checked or called.
 - **Can run itself invisibly inside `bmad-build`.** Optionally hooks into `bmad-build`'s activation and completion steps at install time, so build work gets tracked without ever saying "gzp-pipeline." See [Auto-tracking bmad-build](#auto-tracking-bmad-build).
 
-See [`gzp-pipeline/SKILL.md`](gzp-pipeline/SKILL.md) for the full activation flow, invariants, and capability map.
+See [`skills/gzp-pipeline/SKILL.md`](skills/gzp-pipeline/SKILL.md) for the full activation flow, invariants, and capability map.
 
 ## Requirements
 
@@ -39,7 +39,7 @@ This installs the `gzp-pipeline` skill, which Claude Code loads automatically wh
 
 ### As a BMAD module
 
-Clone or add this repo's `gzp-pipeline/` directory into your project's BMAD module path, then run the skill with `setup` (or just start using it — first-run activation detects an unregistered module and runs setup automatically):
+Clone or add this repo's `skills/gzp-pipeline/` directory into your project's BMAD module path, or install it with the BMAD installer, then run the skill with `setup` (or just start using it — first-run activation detects an unregistered module and runs setup automatically):
 
 ```
 setup
@@ -65,6 +65,8 @@ If you use [`bmad-build`](https://github.com/bmad-code-org/BMAD-METHOD) to imple
 
 This means `bmad-build` runs get tracked automatically, without ever typing "gzp-pipeline." A few things to know:
 
+- **The hook is installed on first use of the skill, not by the BMAD installer.** The installer only writes config files (including your `gzp_autotrack_bmad_build` answer) — it never runs hooks. `_bmad/custom/bmad-build.toml` is written the first time the gzp-pipeline skill activates in the project (which auto-runs setup for an unregistered module), or whenever you say `setup`/`configure`. So a missing hook right after the installer finishes is expected — just use the skill once.
+- **It self-heals.** On every activation, if auto-tracking is enabled, `bmad-build` is installed, and the hook entry is missing, the skill re-installs it — so installing `bmad-build` *after* this module still gets you the hooks without re-running anything by hand.
 - **It's skipped, not forced.** If `bmad-build` isn't installed in the project yet, the write is a no-op — re-run `configure` after installing it, or the next `configure` run picks it up.
 - **It won't clobber your own customizations.** If `_bmad/custom/bmad-build.toml` already has a different `on_complete` override, that field is left alone and setup reports a conflict for you to resolve by hand (the `activation_steps_prepend` entry is additive, so it's written either way).
 - **Answering no later removes it cleanly.** Re-running `configure` and switching the answer to no strips only the entries this module added — anything else in that file is untouched.
