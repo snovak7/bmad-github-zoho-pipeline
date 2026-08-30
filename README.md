@@ -2,13 +2,13 @@
 
 **Pipeline Forge** — a configurable Zoho Projects + GitHub Flow task pipeline, packaged as a [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) module and Claude Code plugin.
 
-It acts as the operator of your repo's delivery pipeline: it plans work into a Zoho Projects task list, drives every code-touching task through GitHub Flow (branch → PR → review → GPG-verified merge → close), and brackets every segment of work with paired Zoho time-log sessions. State is tracked in `session-state.json`, so work can be resumed correctly across sessions, days, or a context reset — no skipped steps, no time-log session left open, no GitHub issue mistaken for a work item.
+It acts as the operator of your repo's delivery pipeline: it plans work into a Zoho Projects task list, drives every code-touching task through GitHub Flow (optional tracking issue → branch → PR → review → GPG-verified merge → close), and brackets every segment of work with paired Zoho time-log sessions. State is tracked in `session-state.json`, so work can be resumed correctly across sessions, days, or a context reset — no skipped steps, no time-log session left open, no GitHub issue mistaken for a work item.
 
 ## What it does
 
 - **Plans phases.** Breaks a chunk of work into a Zoho Projects task list under a logged Planning task, and mirrors the breakdown into a local todo list for in-session visibility.
-- **Drives tasks end to end.** Each task moves through In Progress → PR opened → In Review → merge-verified → Closed.
-- **Self-assigns everything.** Every Zoho task it creates and every GitHub PR it opens is assigned to you automatically, with an appropriate label attached to the PR when one fits.
+- **Drives tasks end to end.** Each task moves through In Progress → PR opened → In Review → merge-verified → Closed. Optionally issue-first: a GitHub Issue is opened for each code-change task before branching, referenced by the branch and PR, and auto-closed by the merge (`gzp_github_issue_first`).
+- **Self-assigns everything.** Every Zoho task it creates and every GitHub PR (and tracking issue) it opens is assigned to you automatically, with an appropriate label attached when one fits.
 - **Time-logs every segment.** Uses a paired start/stop pattern against Zoho's time-log API (Zoho has no live timer).
 - **Handles ad hoc requests and issues.** Small unplanned work and one-off "report an issue" flows are supported without forcing them into a task list.
 - **Resumes safely.** On activation it reads `session-state.json` first — never re-derives position from conversation history — and reports/resumes any task or time-log session left mid-flight.
@@ -52,6 +52,7 @@ You'll be asked for:
 | `gzp_mcp_name` | Which Zoho Projects MCP server to use for time-logging |
 | `gzp_zoho_project_name` | The Zoho Projects project this repo's work is tracked against |
 | `gzp_default_bill_status` | Default bill status for time-log entries (defaults to "Non Billable") |
+| `gzp_github_issue_first` | Whether each code-change task opens a GitHub Issue before branching — linked from the branch and PR, auto-closed by the merge (defaults to yes at setup; projects configured before this option existed behave as "no" until reconfigured) |
 | `gzp_autotrack_bmad_build` | Whether to auto-hook `bmad-build` (defaults to yes) — see [Auto-tracking bmad-build](#auto-tracking-bmad-build) |
 
 Setup writes shared config to `_bmad/config.yaml`, personal settings to `_bmad/config.user.yaml` (gitignore this), and registers the module in `_bmad/module-help.csv`.

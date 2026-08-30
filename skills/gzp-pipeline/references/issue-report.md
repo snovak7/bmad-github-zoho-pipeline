@@ -1,6 +1,6 @@
 # Report an issue
 
-Something went wrong mid-task that's worth tracking as its own reported problem — not the same thing as the task's own GitHub Flow, which never routes through an issue.
+Something went wrong mid-task that's worth tracking as its own reported problem. This is distinct from a task's *tracking issue* (the one `gzp_github_issue_first` opens as a mirror of the Zoho task, auto-closed by the PR merge) — a reported issue is a standalone artifact with its own linked Zoho task, and it exists regardless of that setting.
 
 1. **Open the GitHub issue** describing what went wrong, with enough context (repo, branch/PR if relevant, what was expected vs. observed) that it's understandable without this conversation.
 2. **Auto-create a linked, standalone Zoho task** for it — every issue gets one, no case-by-case judgment call:

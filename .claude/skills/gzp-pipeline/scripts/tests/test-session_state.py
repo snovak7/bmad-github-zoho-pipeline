@@ -32,7 +32,7 @@ def test_init_creates_default_schema(tmp_path):
     assert payload["ok"] is True
     assert payload["created"] is True
     data = json.loads(state_file.read_text())
-    assert data["current_task"] == {"id": None, "title": None, "step": None}
+    assert data["current_task"] == {"id": None, "title": None, "step": None, "github_issue": None}
     assert data["issue_tasks"] == []
 
 
