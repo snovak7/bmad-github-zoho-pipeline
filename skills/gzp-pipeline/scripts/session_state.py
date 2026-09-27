@@ -14,7 +14,8 @@ Schema (all keys always present; unset scalars are null):
 
 {
   "resolved": {
-    "mcp_name": str|null,
+    "zoho_mcp_name": str|null,
+    "github_tool": "gh"|"mcp"|null,
     "portal_id": str|null,
     "zoho_project_id": str|null,
     "zoho_project_name": str|null,
@@ -24,7 +25,7 @@ Schema (all keys always present; unset scalars are null):
     "zoho_user": {"zuid": int, "zpuid": str, "name": str}|null
   },
   "current_task_list": {"id": str|null, "name": str|null},
-  "current_task": {"id": str|null, "title": str|null, "step": str|null, "github_issue": int|null},
+  "current_task": {"id": str|null, "title": str|null, "step": str|null, "github_issue": int|null, "branch": str|null, "pr_number": int|null},
   "open_time_logs": {<task_id>: {"time_log_id": str, "started_at": str}, ...},
   "issue_tasks": [
     {"issue_number": int, "task_id": str, "time_log_id": str|null, "status": "open"|"closed"}
@@ -64,7 +65,8 @@ from pathlib import Path
 
 DEFAULT_STATE = {
     "resolved": {
-        "mcp_name": None,
+        "zoho_mcp_name": None,
+        "github_tool": None,
         "portal_id": None,
         "zoho_project_id": None,
         "zoho_project_name": None,
@@ -74,7 +76,7 @@ DEFAULT_STATE = {
         "zoho_user": None,
     },
     "current_task_list": {"id": None, "name": None},
-    "current_task": {"id": None, "title": None, "step": None, "github_issue": None},
+    "current_task": {"id": None, "title": None, "step": None, "github_issue": None, "branch": None, "pr_number": None},
     "open_time_logs": {},
     "issue_tasks": [],
 }

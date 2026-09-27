@@ -15,7 +15,7 @@ gzp:
     artifacts.'
   version: 1.2.0
   default_selected: false
-  gzp_mcp_name: Zoho Projects - MB24 w/ Time Logs
+  gzp_zoho_mcp_name: Zoho Projects - MB24 w/ Time Logs
   gzp_zoho_project_name: NE-4
   gzp_default_bill_status: Non Billable
   gzp_autotrack_bmad_build: true
