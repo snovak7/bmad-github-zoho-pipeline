@@ -40,9 +40,9 @@ gzp_default_bill_status:
 
 gzp_github_mcp_name:
   prompt: >
-    Which GitHub MCP server should the pipeline use for issues, PRs, and merges when the
-    'gh' CLI isn't installed or authenticated? (The gh CLI is preferred whenever it works;
-    answer with the MCP server name as your client lists it, or leave empty to require gh.)
+    Which GitHub MCP server should the pipeline use for issues, PRs, and merges? (Preferred
+    over the 'gh' CLI whenever it's connected; gh is the fallback. Answer with the MCP server
+    name as your client lists it, or leave empty to use gh only.)
   default: ""
   user_setting: true
 

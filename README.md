@@ -23,7 +23,7 @@ See [`skills/gzp-pipeline/SKILL.md`](skills/gzp-pipeline/SKILL.md) for the full 
 - A Zoho Projects MCP server connected in your Claude Code session, exposing time-log tools (e.g. `add_time_log` / `update_single_time_log`) — only when the Zoho workflow is enabled (`gzp_zoho_workflow`, the default)
 - [`uv`](https://docs.astral.sh/uv/) (used by the module's setup/config scripts)
 - A git repository with `commit.gpgsign` enabled, if GPG enforcement is on (`gzp_gpg_signing`, the default)
-- One GitHub tool for issues, PRs, and merges: the [`gh` CLI](https://cli.github.com/) (installed and authenticated — preferred), or a GitHub MCP server connected in your session and named in `gzp_github_mcp_name`. The pipeline resolves which one to use at activation and stops early if neither works.
+- One GitHub tool for issues, PRs, and merges: a GitHub MCP server connected in your session and named in `gzp_github_mcp_name` (preferred), or the [`gh` CLI](https://cli.github.com/) installed and authenticated as the fallback. The pipeline resolves which one to use at activation and stops early if neither works.
 
 ## Install
 
@@ -54,7 +54,7 @@ You'll be asked for:
 | `gzp_zoho_mcp_name` | Which Zoho Projects MCP server to use for tasks and time-logging (asked only when the Zoho workflow is on; configs from before 1.3.0 that still say `gzp_mcp_name` are migrated on first activation) |
 | `gzp_zoho_project_name` | The Zoho Projects project this repo's work is tracked against (asked only when the Zoho workflow is on) |
 | `gzp_default_bill_status` | Default bill status for time-log entries (defaults to "Non Billable"; asked only when the Zoho workflow is on) |
-| `gzp_github_mcp_name` | Which GitHub MCP server to use for issues, PRs, and merges when the `gh` CLI isn't installed or authenticated — `gh` is preferred whenever it works; leave empty to require `gh` |
+| `gzp_github_mcp_name` | Which GitHub MCP server to use for issues, PRs, and merges — preferred over the `gh` CLI whenever it's connected, with `gh` as the fallback; leave empty to use `gh` only |
 | `gzp_gpg_signing` | Whether GPG-signed commits are enforced as a hard checkpoint via `git log --show-signature` (defaults to yes; when off, commits use the repo's git config as-is) |
 | `gzp_auto_merge_pr` | Whether the pipeline merges its own PRs (explicit-method `gh pr merge`, or the GitHub MCP) instead of waiting for your manual review and merge (defaults to no; blocked merges fall back to waiting, never forced) |
 | `gzp_github_issue_first` | Whether each code-change task opens a GitHub Issue before branching — linked from the branch and PR, auto-closed by the merge (defaults to yes at setup; projects configured before this option existed behave as "no" until reconfigured) |
