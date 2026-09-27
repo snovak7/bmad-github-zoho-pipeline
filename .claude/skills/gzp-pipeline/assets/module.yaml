@@ -20,8 +20,8 @@ gzp_zoho_workflow:
     recommended so each task still has a durable record.)
   default: true
 
-gzp_mcp_name:
-  prompt: "Which Zoho Projects MCP server should this pipeline use for time-logging? (must expose time-log tools, e.g. add_time_log/update_single_time_log)"
+gzp_zoho_mcp_name:
+  prompt: "Which Zoho Projects MCP server should this pipeline use for tasks and time-logging? (must expose time-log tools, e.g. add_time_log/update_single_time_log)"
   default: ""
   required: true
   user_setting: true
@@ -37,6 +37,14 @@ gzp_default_bill_status:
   prompt: "Default bill_status for time-log entries this pipeline creates (e.g. 'Non Billable', 'Billable')?"
   default: "Non Billable"
   asked_when: gzp_zoho_workflow
+
+gzp_github_mcp_name:
+  prompt: >
+    Which GitHub MCP server should the pipeline use for issues, PRs, and merges when the
+    'gh' CLI isn't installed or authenticated? (The gh CLI is preferred whenever it works;
+    answer with the MCP server name as your client lists it, or leave empty to require gh.)
+  default: ""
+  user_setting: true
 
 gzp_gpg_signing:
   prompt: >

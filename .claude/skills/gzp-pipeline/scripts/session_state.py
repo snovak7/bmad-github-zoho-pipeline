@@ -14,7 +14,8 @@ Schema (all keys always present; unset scalars are null):
 
 {
   "resolved": {
-    "mcp_name": str|null,
+    "zoho_mcp_name": str|null,
+    "github_tool": "gh"|"mcp"|null,
     "portal_id": str|null,
     "zoho_project_id": str|null,
     "zoho_project_name": str|null,
@@ -64,7 +65,8 @@ from pathlib import Path
 
 DEFAULT_STATE = {
     "resolved": {
-        "mcp_name": None,
+        "zoho_mcp_name": None,
+        "github_tool": None,
         "portal_id": None,
         "zoho_project_id": None,
         "zoho_project_name": None,

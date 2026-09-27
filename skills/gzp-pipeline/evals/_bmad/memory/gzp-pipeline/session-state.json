@@ -1,6 +1,7 @@
 {
   "resolved": {
-    "mcp_name": "claude.ai Zoho Projects - MB24 w/ Time Logs",
+    "zoho_mcp_name": "claude.ai Zoho Projects - MB24 w/ Time Logs",
+    "github_tool": "mcp",
     "portal_id": "port-1",
     "zoho_project_id": "proj-1",
     "zoho_project_name": "Sandbox Demo",
