@@ -2,7 +2,7 @@
 
 **Pipeline Forge** — a configurable Zoho Projects + GitHub Flow task pipeline, packaged as a [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) module and Claude Code plugin.
 
-It acts as the operator of your repo's delivery pipeline: it plans work into a Zoho Projects task list, drives every code-touching task through GitHub Flow (optional tracking issue → branch → PR → review → GPG-verified merge → close), and brackets every segment of work with paired Zoho time-log sessions. State is tracked in `session-state.json`, so work can be resumed correctly across sessions, days, or a context reset — no skipped steps, no time-log session left open, no GitHub issue mistaken for a work item.
+It acts as the operator of your repo's delivery pipeline: it plans work into a Zoho Projects task list, drives every code-touching task through GitHub Flow (optional tracking issue → branch → GPG-signed commits → PR → review → merge → close), and brackets every segment of work with paired Zoho time-log sessions. Each leg is a setup toggle: the Zoho workflow, GPG enforcement, issue-first flow, and PR auto-merge can each be turned on or off per project — everything on is the default; everything off leaves a plain GitHub Flow driver. State is tracked in `session-state.json`, so work can be resumed correctly across sessions, days, or a context reset — no skipped steps, no time-log session left open, no GitHub issue mistaken for a work item.
 
 ## What it does
 
@@ -20,9 +20,10 @@ See [`skills/gzp-pipeline/SKILL.md`](skills/gzp-pipeline/SKILL.md) for the full 
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code)
-- A Zoho Projects MCP server connected in your Claude Code session, exposing time-log tools (e.g. `add_time_log` / `update_single_time_log`)
+- A Zoho Projects MCP server connected in your Claude Code session, exposing time-log tools (e.g. `add_time_log` / `update_single_time_log`) — only when the Zoho workflow is enabled (`gzp_zoho_workflow`, the default)
 - [`uv`](https://docs.astral.sh/uv/) (used by the module's setup/config scripts)
-- A git repository with `commit.gpgsign` enabled, if you want tasks driven through GitHub Flow
+- A git repository with `commit.gpgsign` enabled, if GPG enforcement is on (`gzp_gpg_signing`, the default)
+- The [`gh` CLI](https://cli.github.com/) (or a GitHub MCP server exposing `merge_pull_request`), if PR auto-merge is on (`gzp_auto_merge_pr`)
 
 ## Install
 
@@ -49,9 +50,12 @@ You'll be asked for:
 
 | Setting | Purpose |
 | --- | --- |
-| `gzp_mcp_name` | Which Zoho Projects MCP server to use for time-logging |
-| `gzp_zoho_project_name` | The Zoho Projects project this repo's work is tracked against |
-| `gzp_default_bill_status` | Default bill status for time-log entries (defaults to "Non Billable") |
+| `gzp_zoho_workflow` | Whether the Zoho Projects side runs at all — tasks, statuses, and time logs (defaults to yes; when off, the pipeline is a pure GitHub Flow driver, the three Zoho questions below are skipped, and pairing with `gzp_github_issue_first` is recommended so each task still has a durable record) |
+| `gzp_mcp_name` | Which Zoho Projects MCP server to use for time-logging (asked only when the Zoho workflow is on) |
+| `gzp_zoho_project_name` | The Zoho Projects project this repo's work is tracked against (asked only when the Zoho workflow is on) |
+| `gzp_default_bill_status` | Default bill status for time-log entries (defaults to "Non Billable"; asked only when the Zoho workflow is on) |
+| `gzp_gpg_signing` | Whether GPG-signed commits are enforced as a hard checkpoint via `git log --show-signature` (defaults to yes; when off, commits use the repo's git config as-is) |
+| `gzp_auto_merge_pr` | Whether the pipeline merges its own PRs (explicit-method `gh pr merge`, or the GitHub MCP) instead of waiting for your manual review and merge (defaults to no; blocked merges fall back to waiting, never forced) |
 | `gzp_github_issue_first` | Whether each code-change task opens a GitHub Issue before branching — linked from the branch and PR, auto-closed by the merge (defaults to yes at setup; projects configured before this option existed behave as "no" until reconfigured) |
 | `gzp_autotrack_bmad_build` | Whether to auto-hook `bmad-build` (defaults to yes) — see [Auto-tracking bmad-build](#auto-tracking-bmad-build) |
 

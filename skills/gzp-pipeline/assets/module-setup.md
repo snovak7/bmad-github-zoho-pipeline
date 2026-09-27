@@ -49,6 +49,8 @@ Read each variable in `./assets/module.yaml` that has a `prompt` field. The modu
 
 Ask using the prompt with its default value. Apply `result` templates when storing (e.g. `{project-root}/{value}`). Fields with `user_setting: true` go exclusively to `config.user.yaml`.
 
+**Conditional questions**: a variable with `asked_when: <other_field>` is asked only when the collected value of that field is truthy; when it isn't, don't prompt (even if `required: true`) — record the variable's default (or its existing/legacy value) silently. Ask questions in the order the variables appear in `module.yaml`, so gating fields come before the questions they gate.
+
 ## Write Files
 
 Write a temp JSON file with the collected answers structured as `{"core": {...}, "module": {...}}` (omit `core` if it already exists). Values inside this JSON keep the literal `{project-root}` token. Then run both scripts — they can run in parallel since they write to different files.

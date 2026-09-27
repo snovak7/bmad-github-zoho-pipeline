@@ -2,6 +2,11 @@
 
 Set `session-state.current_task` to the task being worked (id, title) before doing anything else, so an interruption mid-task is always recoverable. `STATE` below stands for `{project-root}/_bmad/memory/gzp-pipeline/session-state.json`; `<task-id>` is `current_task.id`. If a `TodoWrite` list from `references/planning-phase.md` is active for this phase, mark this task's item `in_progress` now too — and `completed` when the task closes at the end of either path below.
 
+**Config gates** (see Invariants in `SKILL.md` for the full statements):
+- `gzp_zoho_workflow` off → skip the *Zoho half* of every step below (status changes, time-log sessions, task comments) — but always keep the `session_state.py` writes (`current_task.step`, `github_issue`, `pr_number`): the resume flow depends on them regardless of the toggle. `current_task` then holds a short slug for the work item instead of a Zoho id, the tracking issue (when issue-first is on) is the work item of record, and progress lives in `session-state` + `TodoWrite`. With issue-first *also* off, the PR is the only durable record — recommend enabling issue-first alongside Zoho-off.
+- `gzp_gpg_signing` off → skip the signature spot-check in step 6; commit with the repo's git config as-is.
+- `gzp_auto_merge_pr` on → step 9 merges the PR itself instead of waiting.
+
 ## Decide the branch first
 
 Does this task produce a code change? If no — pure brainstorming, planning, or testing-only work — skip straight to **Non-code path** below. Otherwise use **Code path**. This decision is made once per task, up front; don't re-litigate it mid-task.
@@ -15,12 +20,14 @@ Does this task produce a code change? If no — pure brainstorming, planning, or
    - **Always work from a local git clone**, even for a repo other than the current working directory (resolve via `session-state.resolved.repo_owner`/`repo_name`, or an explicit override when the user names a different repo for this task). Clone it locally rather than editing via GitHub API file-write tools (`create_or_update_file`, `push_files`) — those bypass local git entirely and the resulting commit won't carry the user's own GPG signature.
 5. **Verify before staging.** Build/test the affected code. Stage explicitly by path (never a blind `git add -A`) and diff what's staged before committing.
 6. **Commit, push, open the PR.** Conventional commit message. PR body: summary bullets and a Test plan checklist — only check `[x]` what actually ran. If a tracking issue was opened in step 3, the PR body must include `Closes #<issue>` so the merge closes it automatically.
-   - `git config commit.gpgsign` is expected already `true` locally — never override it, never pass `--no-gpg-sign`. After committing, spot-check `git log --show-signature -1` shows a good signature from the user's key, not just GitHub's own web-verification. If it doesn't, stop and ask rather than guessing or skipping the check.
+   - When `gzp_gpg_signing` is enabled (the default): `git config commit.gpgsign` is expected already `true` locally — never override it, never pass `--no-gpg-sign`. After committing, spot-check `git log --show-signature -1` shows a good signature from the user's key, not just GitHub's own web-verification. If it doesn't, stop and ask rather than guessing or skipping the check. When disabled: commit as the repo is configured and skip the signature check.
    - Assign the PR to the user (resolve their GitHub identity via `get_me` once per session if not already known).
    - Attach labels that actually fit the repo's existing label set — don't invent new ones speculatively.
-7. **Set status "In Review"** on the Zoho task, and `set current_task.step '"pr_open_awaiting_merge"'`.
+7. **Set status "In Review"** on the Zoho task, `set current_task.step '"pr_open_awaiting_merge"'`, and `set current_task.pr_number <number>` — the auto-merge gate in step 9 may only act on a PR recorded here.
 8. **Stop the time-log session** from step 2, with a note summarizing what was implemented, the PR number, and the tracking issue number if one exists.
-9. **Wait. Do not proceed until the PR is confirmed merged.** When the user's message implies merge status ("continue", "next", "merged") or is otherwise ambiguous, verify yourself via `pull_request_read` rather than asking them to restate it. Only ask when the check itself is inconclusive (closed-not-merged, or the call fails).
+9. **Merge gate.**
+   - **Default (`gzp_auto_merge_pr` off): wait. Do not proceed until the PR is confirmed merged.** When the user's message implies merge status ("continue", "next", "merged") or is otherwise ambiguous, verify yourself via `pull_request_read` rather than asking them to restate it. Only ask when the check itself is inconclusive (closed-not-merged, or the call fails).
+   - **`gzp_auto_merge_pr` on:** merge the PR yourself now — only the PR recorded in `current_task.pr_number` (opened by this pipeline for this task). Use `gh pr merge <n> --delete-branch` with an explicit method flag (`--squash`, `--merge`, or `--rebase` — pick the repo's default/allowed method; a bare `gh pr merge` prompts interactively and must never be issued), or the GitHub MCP `merge_pull_request` tool when `gh` is unavailable. Verify it reports merged, then continue to step 10 without waiting. Keep the step-6 self-assignment either way — it records authorship, not a review request. If the merge is blocked — required checks pending or failing, required reviews, conflicts — report the exact blocker and fall back to the waiting behavior above; never use `--admin` or any force-style override.
 10. **Check for open feedback before treating the merge as done.** Read the PR's description-level comments and review comments. If there's actionable feedback not already addressed pre-merge:
     - Keep the task's status at "In Review"/"In Progress" — don't close it yet. Set `current_task.step` to `"addressing_review_feedback"`.
     - Start a new time-log session on `<task-id>` (a fresh pair — never reopen or extend the one from step 2/8).
@@ -39,6 +46,8 @@ Does this task produce a code change? If no — pure brainstorming, planning, or
 4. **Stop the session** with a note on what was produced/decided.
 5. **Set status "Closed."** No branch, no issue, no PR — nothing GitHub-side happens for this task.
 
+With `gzp_zoho_workflow` off, this path reduces to: do the work, mark the `TodoWrite` item completed, and summarize what was produced in conversation — there is nowhere else to record it, so the summary is not optional.
+
 ## After either path
 
 Clear the current task: `uv run scripts/session_state.py clear-current-task --path STATE`. Then wait for new instructions — if more tasks are already broken out in the phase's list, either the user names the next one or you take the next open one and confirm. Only re-enter `references/planning-phase.md` when the user starts a genuinely new phase.
@@ -47,7 +56,7 @@ Clear the current task: `uv run scripts/session_state.py clear-current-task --pa
 
 Not everything arrives as "start the next task from the list." A mid-session ask that doesn't fit an open task list — "merge these PRs", "fix Y real quick" — still needs a task and a time-log session *before* work starts, not skipped because it feels too small and not batched up as a retroactive log afterward. This is the exact failure mode the pipeline exists to prevent.
 
-1. If an existing open task list is genuinely the right home for it, add the task there. Otherwise create a small task list for it (e.g. "Repo maintenance: <short description>") rather than skipping list creation because it's "just one thing."
+1. If an existing open task list is genuinely the right home for it, add the task there. Otherwise create a small task list for it (e.g. "Repo maintenance: <short description>") rather than skipping list creation because it's "just one thing." (With `gzp_zoho_workflow` off, skip the Zoho list/task and instead set `current_task` to a short slug and add a `TodoWrite` item before starting — the "track it before working it" rule survives the toggle.)
 2. Create the task (self-assigned, same as any other — see Invariants in `SKILL.md`), start a time-log session on it, *then* start the work. Add it to the active `TodoWrite` mirror if one exists for this phase; otherwise a single-item list is fine.
 3. Run it through the normal lifecycle above (code or non-code path, whichever fits). `gzp_github_issue_first` applies to ad hoc code tasks exactly as to planned ones — a one-line fix still gets its tracking issue when the flag is on.
 
