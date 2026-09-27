@@ -7,7 +7,7 @@ It acts as the operator of your repo's delivery pipeline: it plans work into a Z
 ## What it does
 
 - **Plans phases.** Breaks a chunk of work into a Zoho Projects task list under a logged Planning task, and mirrors the breakdown into a local todo list for in-session visibility.
-- **Drives tasks end to end.** Each task moves through In Progress → PR opened → In Review → merge-verified → Closed. Optionally issue-first: a GitHub Issue is opened for each code-change task before branching, referenced by the branch and PR, and auto-closed by the merge (`gzp_github_issue_first`).
+- **Drives tasks end to end.** Each task moves through In Progress → PR opened → In Review → merge-verified → Closed. Optionally issue-first: a GitHub Issue is opened for each code-change task before branching, referenced by the branch and PR, and auto-closed by the merge (`gzp_github_issue_first`). Branch names are deterministic — `{type}/{zoho-id}-gh{issue}-{slug}`, e.g. `feat/ecm-t101-gh5-generic-toggles` — with the conventional-commit type (which sets the semver bump) leading and the Zoho/issue segments dropping out when those toggles are off.
 - **Self-assigns everything.** Every Zoho task it creates and every GitHub PR (and tracking issue) it opens is assigned to you automatically, with an appropriate label attached when one fits.
 - **Time-logs every segment.** Uses a paired start/stop pattern against Zoho's time-log API (Zoho has no live timer).
 - **Handles ad hoc requests and issues.** Small unplanned work and one-off "report an issue" flows are supported without forcing them into a task list.
