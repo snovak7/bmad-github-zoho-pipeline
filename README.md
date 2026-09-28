@@ -13,7 +13,7 @@ It acts as the operator of your repo's delivery pipeline: it plans work into a Z
 - **Handles ad hoc requests and issues.** Small unplanned work and one-off "report an issue" flows are supported without forcing them into a task list.
 - **Resumes safely.** On activation it reads `session-state.json` first — never re-derives position from conversation history — and reports/resumes any task or time-log session left mid-flight.
 - **Never fabricates verification.** Status changes, merges, GPG signatures, and time-log entries must correspond to something actually checked or called.
-- **Can run itself invisibly inside `bmad-build`.** Optionally hooks into `bmad-build`'s activation and completion steps at install time, so build work gets tracked without ever saying "gzp-pipeline." See [Auto-tracking bmad-build](#auto-tracking-bmad-build).
+- **Can run itself invisibly inside `bmad-build`.** Optionally hooks into `bmad-build`'s activation and completion steps at install time, so build work gets tracked without ever saying "gzp-pipeline." See [Auto-tracking bmad-build](#auto-tracking-bmad-build). The unattended loop (`bmad-build-auto`) can be hooked the same way, with rules that never wait on a human — see [Auto-tracking the unattended loop](#auto-tracking-the-unattended-loop).
 
 See [`skills/gzp-pipeline/SKILL.md`](skills/gzp-pipeline/SKILL.md) for the full activation flow, invariants, and capability map.
 
@@ -59,6 +59,7 @@ You'll be asked for:
 | `gzp_auto_merge_pr` | Whether the pipeline merges its own PRs (explicit-method `gh pr merge`, or the GitHub MCP) instead of waiting for your manual review and merge (defaults to no; blocked merges fall back to waiting, never forced) |
 | `gzp_github_issue_first` | Whether each code-change task opens a GitHub Issue before branching — linked from the branch and PR, auto-closed by the merge (defaults to yes at setup; projects configured before this option existed behave as "no" until reconfigured) |
 | `gzp_autotrack_bmad_build` | Whether to auto-hook `bmad-build` (defaults to yes) — see [Auto-tracking bmad-build](#auto-tracking-bmad-build) |
+| `gzp_autotrack_bmad_loop` | Whether to auto-hook the unattended development loop, `bmad-build-auto` (defaults to yes at setup; projects configured before this option existed leave the loop untracked until reconfigured) — see [Auto-tracking the unattended loop](#auto-tracking-the-unattended-loop) |
 
 Setup writes shared config to `_bmad/config.yaml`, personal settings to `_bmad/config.user.yaml` (gitignore this), and registers the module in `_bmad/module-help.csv`.
 
@@ -77,6 +78,16 @@ This means `bmad-build` runs get tracked automatically, without ever typing "gzp
 - **It won't clobber your own customizations.** If `_bmad/custom/bmad-build.toml` already has a different `on_complete` override, that field is left alone and setup reports a conflict for you to resolve by hand (the `activation_steps_prepend` entry is additive, so it's written either way).
 - **Answering no later removes it cleanly.** Re-running `configure` and switching the answer to no strips only the entries this module added — anything else in that file is untouched.
 - **Prefer it off, or want it elsewhere?** Answer no during setup, or edit `_bmad/custom/bmad-build.toml` directly — see the [How to Customize BMad guide](https://docs.bmad-method.org/how-to/customize-bmad/).
+
+### Auto-tracking the unattended loop
+
+`bmad-build-auto` runs one iteration of an unattended development loop, and it reads its **own** override file (`_bmad/custom/bmad-build-auto.toml`) — so the `bmad-build` hook above never reaches it, and without a hook of its own the loop skips the pipeline entirely. Answer yes to `gzp_autotrack_bmad_loop` and Pipeline Forge writes the same two hooks there, in an unattended variant:
+
+- **It never asks and never waits.** Anything that would need an answer — unresolved required config, no working GitHub tool, ambiguous resume state — is reported as a blocker, and the loop halts with status `blocked` instead of hanging on a prompt nobody will see.
+- **The merge gate returns control.** With `gzp_auto_merge_pr` on, the iteration's PR is merged and the loop flows on. With it off (the default), the iteration ends with its PR open; the next iteration checks that PR first and halts as `blocked: PR #<n> awaiting merge` until you merge it — one task in flight holds in the loop too. So for a loop that should run hands-off across several tasks, turn auto-merge on; to keep a human review per task, leave it off and merge between runs.
+- **Everything else is unchanged.** Tracking, time logs, GPG checks, the tracking issue, and branch naming all apply exactly as in an interactive run.
+
+The install, self-heal, `skipped`, conflict, and "answer no to remove it" behaviors described above apply to this hook the same way, and the two hooks are independent — either can be on without the other.
 
 ## Usage
 
