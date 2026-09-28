@@ -20,4 +20,5 @@ gzp:
   gzp_default_bill_status: Non Billable
   gzp_autotrack_bmad_build: true
   gzp_autotrack_bmad_loop: true
+  gzp_loop_auto_merge_pr: true
   gzp_github_issue_first: true

@@ -72,6 +72,8 @@ def test_enable_unattended_writes_never_wait_variants(tmp_path):
     workflow = load(target)
     assert "must not ask questions or wait for a human" in workflow["activation_steps_prepend"][0]
     assert "never waits for a human" in workflow["on_complete"]
+    assert "accepts its own PR" in workflow["on_complete"]
+    assert "never forces a merge" in workflow["on_complete"]
 
 
 def test_rerun_replaces_rather_than_duplicates(tmp_path):

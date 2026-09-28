@@ -93,6 +93,8 @@ uv run ./scripts/write-build-hook.py --target "{project-root}/_bmad/custom/bmad-
 
 `--unattended` writes hook text that forbids asking questions or waiting on a human (see the unattended invariant in `SKILL.md`). Statuses, the `skipped`-when-not-installed behavior, the `conflict` handling, and `--action disable` on a yes→no flip all work exactly as for bmad-build. The two answers are independent: either hook can be on without the other.
 
+`gzp_loop_auto_merge_pr` (asked only when the loop hook is on) needs no script run — it's read at the merge gate. Mention in the confirmation summary which way it was answered, since it decides whether loop iterations merge their own PRs or end with the PR open.
+
 ## Create Output Directories
 
 After writing config, create any output directories that were configured. For filesystem operations only (such as creating directories), resolve the `{project-root}` token to the actual project root and create each path-type value from `config.yaml` that does not yet exist — this includes `output_folder` and any module variable whose value starts with `{project-root}/`. The paths stored in the config files must continue to use the literal `{project-root}` token; only the directories on disk should use the resolved paths. Use `mkdir -p` or equivalent to create the full path.

@@ -72,8 +72,10 @@ UNATTENDED_ON_COMPLETE_TEXT = (
     "code-touching changes through GitHub Flow (tracking issue when configured, branch, commit, "
     "push, PR — self-assigned, labeled) if that has not already happened, updates the Zoho "
     "task's status, and closes out the time-log session opened at activation. This run is "
-    "unattended: at the merge gate gzp-pipeline either merges (auto-merge enabled and "
-    "unblocked) or leaves the PR open and returns — it never waits for a human. Do not commit, "
+    "unattended: at the merge gate gzp-pipeline accepts its own PR — it merges once checks "
+    "are green (loop auto-merge, on by default) — and when the merge is blocked or loop "
+    "auto-merge is off it leaves the PR open and returns; it never waits for a human and "
+    "never forces a merge. Do not commit, "
     "push, open a PR, or touch Zoho directly from this workflow's own steps — gzp-pipeline "
     "owns that lifecycle end to end.\n"
 )

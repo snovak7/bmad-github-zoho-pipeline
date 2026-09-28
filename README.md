@@ -60,6 +60,7 @@ You'll be asked for:
 | `gzp_github_issue_first` | Whether each code-change task opens a GitHub Issue before branching — linked from the branch and PR, auto-closed by the merge (defaults to yes at setup; projects configured before this option existed behave as "no" until reconfigured) |
 | `gzp_autotrack_bmad_build` | Whether to auto-hook `bmad-build` (defaults to yes) — see [Auto-tracking bmad-build](#auto-tracking-bmad-build) |
 | `gzp_autotrack_bmad_loop` | Whether to auto-hook the unattended development loop, `bmad-build-auto` (defaults to yes at setup; projects configured before this option existed leave the loop untracked until reconfigured) — see [Auto-tracking the unattended loop](#auto-tracking-the-unattended-loop) |
+| `gzp_loop_auto_merge_pr` | Whether the pipeline merges its own PRs inside the unattended loop (defaults to yes; asked only when the loop hook is on; independent of `gzp_auto_merge_pr`) |
 
 Setup writes shared config to `_bmad/config.yaml`, personal settings to `_bmad/config.user.yaml` (gitignore this), and registers the module in `_bmad/module-help.csv`.
 
@@ -84,7 +85,9 @@ This means `bmad-build` runs get tracked automatically, without ever typing "gzp
 `bmad-build-auto` runs one iteration of an unattended development loop, and it reads its **own** override file (`_bmad/custom/bmad-build-auto.toml`) — so the `bmad-build` hook above never reaches it, and without a hook of its own the loop skips the pipeline entirely. Answer yes to `gzp_autotrack_bmad_loop` and Pipeline Forge writes the same two hooks there, in an unattended variant:
 
 - **It never asks and never waits.** Anything that would need an answer — unresolved required config, no working GitHub tool, ambiguous resume state — is reported as a blocker, and the loop halts with status `blocked` instead of hanging on a prompt nobody will see.
-- **The merge gate returns control.** With `gzp_auto_merge_pr` on, the iteration's PR is merged and the loop flows on. With it off (the default), the iteration ends with its PR open; the next iteration checks that PR first and halts as `blocked: PR #<n> awaiting merge` until you merge it — one task in flight holds in the loop too. So for a loop that should run hands-off across several tasks, turn auto-merge on; to keep a human review per task, leave it off and merge between runs.
+- **The loop accepts its own PRs.** `gzp_loop_auto_merge_pr` (default yes) governs unattended runs, separately from `gzp_auto_merge_pr`, which governs interactive ones — so you can keep a human merge when you're at the keyboard and still let the loop flow on its own. The pipeline merges only the PR it opened for the current task, only once its checks are green, and never with `--admin` or any force-style override.
+- **A blocked merge halts the loop instead of hanging it.** If checks are pending or failing, a review is required, or there's a conflict — or you turned loop auto-merge off — the iteration ends with its PR open. The next iteration re-checks that PR first: it merges and continues if it can, otherwise halts as `blocked: PR #<n> awaiting merge — <exact blocker>`. One task in flight holds in the loop too.
+- **It doesn't depend on the loop runner's decision support.** `blocked` with a precise condition is the only thing the pipeline ever hands back; a runner that can surface decisions may present it as one, and one that can't simply stops.
 - **Everything else is unchanged.** Tracking, time logs, GPG checks, the tracking issue, and branch naming all apply exactly as in an interactive run.
 
 The install, self-heal, `skipped`, conflict, and "answer no to remove it" behaviors described above apply to this hook the same way, and the two hooks are independent — either can be on without the other.

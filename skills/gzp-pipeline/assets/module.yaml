@@ -81,9 +81,17 @@ gzp_autotrack_bmad_loop:
     Also track the unattended development loop (bmad-build-auto) through Pipeline Forge? The
     loop reads its own override file, so without this it skips the pipeline entirely. This
     writes unattended hooks into _bmad/custom/bmad-build-auto.toml: the pipeline never asks
-    questions or waits for a human there — with PR auto-merge off, each iteration ends with
-    its PR open and the loop halts as blocked until you merge it.
+    questions or waits for a human there.
   default: true
+
+gzp_loop_auto_merge_pr:
+  prompt: >
+    In the unattended loop, let the pipeline accept (merge) the PRs it opens by itself, so
+    iterations flow without you? (Independent of the interactive auto-merge answer above.
+    Only merges its own PR once checks are green; a blocked merge leaves the PR open and the
+    loop halts as blocked. When off, every iteration ends with its PR open for you to merge.)
+  default: true
+  asked_when: gzp_autotrack_bmad_loop
 
 directories:
   - "{project-root}/_bmad/memory/gzp-pipeline"
