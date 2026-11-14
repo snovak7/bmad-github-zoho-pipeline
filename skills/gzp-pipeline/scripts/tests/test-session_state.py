@@ -32,7 +32,7 @@ def test_init_creates_default_schema(tmp_path):
     assert payload["ok"] is True
     assert payload["created"] is True
     data = json.loads(state_file.read_text())
-    assert data["current_task"] == {"id": None, "title": None, "step": None, "github_issue": None, "branch": None, "pr_number": None}
+    assert data["current_task"] == {"id": None, "title": None, "step": None, "issue_number": None, "branch": None, "pr_number": None}
     assert data["issue_tasks"] == []
 
 
@@ -120,6 +120,41 @@ def test_open_and_close_time_log_keyed_by_task(tmp_path):
 
     result = run("close-time-log", "--path", str(state_file), "--task-id", "T-1")
     assert result.returncode == 1
+
+
+def test_init_migrates_legacy_github_keys(tmp_path):
+    state_file = tmp_path / "session-state.json"
+    legacy = {
+        "resolved": {"zoho_mcp_name": "z", "github_tool": "gh", "repo_owner": "o", "repo_name": "r"},
+        "current_task_list": {"id": None, "name": None},
+        "current_task": {"id": "T-1", "title": "t", "step": "in_progress", "github_issue": 7},
+        "open_time_logs": {},
+        "issue_tasks": [],
+    }
+    state_file.write_text(json.dumps(legacy))
+    result = run("init", "--path", str(state_file))
+    assert result.returncode == 0, result.stderr
+    payload = parse_stdout(result)
+    assert payload["created"] is False
+    assert payload["migrated"], payload
+    data = json.loads(state_file.read_text())
+    assert "github_tool" not in data["resolved"]
+    assert data["resolved"]["forge"] == "github"
+    assert data["resolved"]["forge_tool"] == "cli"
+    assert data["resolved"]["forge_cli"] == "gh"
+    assert data["resolved"]["repo_host"] is None
+    assert "github_issue" not in data["current_task"]
+    assert data["current_task"]["issue_number"] == 7
+    assert data["current_task"]["pr_number"] is None
+    again = parse_stdout(run("init", "--path", str(state_file)))
+    assert again["migrated"] == []
+
+
+def test_load_migrates_legacy_mcp_tool_in_memory(tmp_path):
+    state_file = tmp_path / "session-state.json"
+    state_file.write_text(json.dumps({"resolved": {"github_tool": "mcp"}, "current_task": {}}))
+    payload = parse_stdout(run("get", "--path", str(state_file), "resolved.forge_tool"))
+    assert payload["value"] == "mcp"
 
 
 def main():

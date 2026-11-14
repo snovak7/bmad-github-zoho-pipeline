@@ -1,11 +1,14 @@
 {
   "resolved": {
     "zoho_mcp_name": "claude.ai Zoho Projects - MB24 w/ Time Logs",
-    "github_tool": "mcp",
+    "forge": "github",
+    "forge_tool": "mcp",
+    "forge_cli": null,
     "portal_id": "port-1",
     "zoho_project_id": "proj-1",
     "zoho_project_name": "Sandbox Demo",
     "status_option_ids": {"In Progress": "10", "In Review": "20", "Closed": "30"},
+    "repo_host": "github.com",
     "repo_owner": "simon",
     "repo_name": "sandbox-bmad"
   },
