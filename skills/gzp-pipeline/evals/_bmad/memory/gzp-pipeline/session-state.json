@@ -1,5 +1,6 @@
 {
   "resolved": {
+    "tracker": "zoho",
     "zoho_mcp_name": "claude.ai Zoho Projects - MB24 w/ Time Logs",
     "forge": "github",
     "forge_tool": "mcp",
