@@ -1,7 +1,7 @@
 code: gzp
 name: "Pipeline Forge"
-description: "Configurable Zoho Projects + GitHub Flow task pipeline: plans, tracks, and time-logs work in Zoho (optional per project), drives implementation tasks through GitHub Flow per repo config — issue-first flow, GPG enforcement, and PR auto-merge each a setup toggle — and handles ad hoc GitHub issues as standalone reporting artifacts."
-module_version: 1.4.0
+description: "Configurable Zoho Projects + GitHub Flow task pipeline: plans, tracks, and time-logs work in Zoho (optional per project), drives implementation tasks through GitHub Flow on GitHub or Forgejo (via MCP or the gh/fj CLI) per repo config — issue-first flow, GPG enforcement, and PR auto-merge each a setup toggle — and handles ad hoc forge issues as standalone reporting artifacts."
+module_version: 1.5.0
 default_selected: false
 module_greeting: >
   Pipeline Forge is ready. Say "start a new phase" to break your next chunk of work into a
@@ -38,13 +38,35 @@ gzp_default_bill_status:
   default: "Non Billable"
   asked_when: gzp_zoho_workflow
 
-gzp_github_mcp_name:
+gzp_forge:
+  prompt: "Which forge hosts this repo's issues and PRs?"
+  default: "github"
+  single-select:
+    - value: "github"
+      label: "GitHub (gh CLI or a GitHub MCP server)"
+    - value: "forgejo"
+      label: "Forgejo, e.g. Codeberg or self-hosted (fj CLI or a Forgejo MCP server)"
+
+gzp_forge_tool:
   prompt: >
-    Which GitHub MCP server should the pipeline use for issues, PRs, and merges? (Preferred
-    over the 'gh' CLI whenever it's connected; gh is the fallback. Answer with the MCP server
-    name as your client lists it, or leave empty to use gh only.)
-  default: ""
+    How should the pipeline talk to the forge for issues, PRs, and merges: through an MCP
+    server connected in your client, or the forge's CLI (gh for GitHub, fj for Forgejo)?
+    The choice is strict: if the chosen tool isn't available, the pipeline stops and says
+    so instead of silently switching to the other.
+  default: "mcp"
+  single-select:
+    - value: "mcp"
+      label: "MCP server (named in the next question)"
+    - value: "cli"
+      label: "CLI (gh / fj, installed and authenticated)"
   user_setting: true
+
+gzp_forge_mcp_name:
+  prompt: "Which MCP server should the pipeline use for the forge? (the server name as your client lists it)"
+  default: ""
+  required: true
+  user_setting: true
+  asked_when: "gzp_forge_tool == mcp"
 
 gzp_gpg_signing:
   prompt: >
@@ -60,9 +82,9 @@ gzp_auto_merge_pr:
     back to waiting; nothing is ever forced.)
   default: false
 
-gzp_github_issue_first:
+gzp_issue_first:
   prompt: >
-    Create a GitHub Issue first for every code-change task — opened before branching, linked
+    Create a tracking issue first for every code-change task — opened before branching, linked
     from the branch and PR, and auto-closed by the merge? (When off, tasks go straight to
     branch and PR.)
   default: true
