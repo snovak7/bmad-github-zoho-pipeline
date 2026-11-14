@@ -21,4 +21,5 @@ gzp:
   gzp_autotrack_bmad_build: true
   gzp_autotrack_bmad_loop: true
   gzp_loop_auto_merge_pr: true
-  gzp_github_issue_first: true
+  gzp_issue_first: true
+  gzp_forge: github

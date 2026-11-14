@@ -15,22 +15,31 @@ Schema (all keys always present; unset scalars are null):
 {
   "resolved": {
     "zoho_mcp_name": str|null,
-    "github_tool": "gh"|"mcp"|null,
+    "forge": "github"|"forgejo"|null,
+    "forge_tool": "mcp"|"cli"|null,
+    "forge_cli": "gh"|"fj"|null,
     "portal_id": str|null,
     "zoho_project_id": str|null,
     "zoho_project_name": str|null,
     "status_option_ids": {<status label>: <option id>, ...},
+    "repo_host": str|null,
     "repo_owner": str|null,
     "repo_name": str|null,
     "zoho_user": {"zuid": int, "zpuid": str, "name": str}|null
   },
   "current_task_list": {"id": str|null, "name": str|null},
-  "current_task": {"id": str|null, "title": str|null, "step": str|null, "github_issue": int|null, "branch": str|null, "pr_number": int|null},
+  "current_task": {"id": str|null, "title": str|null, "step": str|null, "issue_number": int|null, "branch": str|null, "pr_number": int|null},
   "open_time_logs": {<task_id>: {"time_log_id": str, "started_at": str}, ...},
   "issue_tasks": [
     {"issue_number": int, "task_id": str, "time_log_id": str|null, "status": "open"|"closed"}
   ]
 }
+
+Legacy keys from before 1.5.0 (resolved.github_tool, current_task.github_issue)
+are migrated on load: github_issue is renamed to issue_number, github_tool "gh"
+becomes forge_tool "cli" / forge_cli "gh" (forge "github"), "mcp" becomes
+forge_tool "mcp" (forge "github"). Missing keys are filled from the defaults.
+`init` on an existing file persists the migration.
 
 open_time_logs is keyed by task_id, not a single slot — the primary task and
 any in-flight issue-task can each have their own open session at once (see
@@ -38,7 +47,8 @@ references/issue-report.md), and closing one must never touch another's.
 
 Commands:
   init                 Create the file with the default schema if it does not
-                        exist (idempotent — a no-op if it already exists).
+                        exist; on an existing file, persist any legacy-key
+                        migration (otherwise a no-op).
   show                 Print the full current state.
   get <path>           Print the value at a dotted path (e.g. "current_task.step").
   set <path> <value>   Set the value at a dotted path. <value> is parsed as
@@ -66,17 +76,20 @@ from pathlib import Path
 DEFAULT_STATE = {
     "resolved": {
         "zoho_mcp_name": None,
-        "github_tool": None,
+        "forge": None,
+        "forge_tool": None,
+        "forge_cli": None,
         "portal_id": None,
         "zoho_project_id": None,
         "zoho_project_name": None,
         "status_option_ids": {},
+        "repo_host": None,
         "repo_owner": None,
         "repo_name": None,
         "zoho_user": None,
     },
     "current_task_list": {"id": None, "name": None},
-    "current_task": {"id": None, "title": None, "step": None, "github_issue": None, "branch": None, "pr_number": None},
+    "current_task": {"id": None, "title": None, "step": None, "issue_number": None, "branch": None, "pr_number": None},
     "open_time_logs": {},
     "issue_tasks": [],
 }
@@ -92,10 +105,44 @@ class StateError(Exception):
         self.payload = payload
 
 
+def migrate_state(state: dict) -> list[str]:
+    """Upgrade a pre-1.5.0 state in place; return a list of what changed."""
+    changes = []
+    resolved = state.setdefault("resolved", {})
+    if "github_tool" in resolved:
+        legacy = resolved.pop("github_tool")
+        if legacy is not None and resolved.get("forge_tool") is None:
+            resolved["forge"] = resolved.get("forge") or "github"
+            if legacy == "gh":
+                resolved["forge_tool"], resolved["forge_cli"] = "cli", "gh"
+            else:
+                resolved["forge_tool"] = legacy
+        changes.append("resolved.github_tool -> resolved.forge_tool")
+    task = state.setdefault("current_task", {})
+    if "github_issue" in task:
+        legacy = task.pop("github_issue")
+        if task.get("issue_number") is None:
+            task["issue_number"] = legacy
+        changes.append("current_task.github_issue -> current_task.issue_number")
+    for section in ("resolved", "current_task_list", "current_task"):
+        node = state.setdefault(section, {})
+        for key, default in DEFAULT_STATE[section].items():
+            if key not in node:
+                node[key] = json.loads(json.dumps(default))
+                changes.append(f"added {section}.{key}")
+    for key in ("open_time_logs", "issue_tasks"):
+        if key not in state:
+            state[key] = json.loads(json.dumps(DEFAULT_STATE[key]))
+            changes.append(f"added {key}")
+    return changes
+
+
 def load_state(path: Path) -> dict:
     if not path.exists():
         raise StateError({"ok": False, "error": f"session-state file not found at {path}; run 'init' first"})
-    return json.loads(path.read_text())
+    state = json.loads(path.read_text())
+    migrate_state(state)
+    return state
 
 
 def write_state(path: Path, state: dict) -> None:
@@ -127,7 +174,11 @@ def resolve_path(state: dict, dotted: str, create: bool = False):
 def cmd_init(args) -> int:
     path = Path(args.path)
     if path.exists():
-        print(json.dumps({"ok": True, "created": False, "path": str(path)}))
+        state = json.loads(path.read_text())
+        changes = migrate_state(state)
+        if changes:
+            write_state(path, state)
+        print(json.dumps({"ok": True, "created": False, "migrated": changes, "path": str(path)}))
         return 0
     write_state(path, json.loads(json.dumps(DEFAULT_STATE)))
     print(json.dumps({"ok": True, "created": True, "path": str(path)}))

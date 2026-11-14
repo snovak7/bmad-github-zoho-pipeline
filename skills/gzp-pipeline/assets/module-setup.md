@@ -49,7 +49,11 @@ Read each variable in `./assets/module.yaml` that has a `prompt` field. The modu
 
 Ask using the prompt with its default value. Apply `result` templates when storing (e.g. `{project-root}/{value}`). Fields with `user_setting: true` go exclusively to `config.user.yaml`.
 
-**Conditional questions**: a variable with `asked_when: <other_field>` is asked only when the collected value of that field is truthy; when it isn't, don't prompt (even if `required: true`) — record the variable's default (or its existing/legacy value) silently. Ask questions in the order the variables appear in `module.yaml`, so gating fields come before the questions they gate.
+**Conditional questions**: a variable with `asked_when: <other_field>` is asked only when the collected value of that field is truthy, and one with `asked_when: "<other_field> == <value>"` only when that field's collected value equals `<value>`; when the condition doesn't hold, don't prompt (even if `required: true`) — record the variable's default (or its existing/legacy value) silently. Ask questions in the order the variables appear in `module.yaml`, so gating fields come before the questions they gate.
+
+**Legacy keys (before 1.5.0)**: an existing `gzp_github_mcp_name` (in `config.user.yaml`) is the default for `gzp_forge_mcp_name`, and an existing `gzp_github_issue_first` (in the `gzp` section) is the default for `gzp_issue_first`. When `gzp_forge_tool` has no existing value, default it to `mcp` if a legacy `gzp_github_mcp_name` is set and `cli` otherwise. `gzp_forge` defaults to `github` for these configs. After the scripts below run, delete `gzp_github_mcp_name` from `config.user.yaml`. The `config.yaml` section is rewritten fresh, so the old issue-first key disappears there on its own.
+
+**Forge tool check**: after the forge questions, run the availability check from `references/forge-tooling.md` (Resolve at activation, step 2) for the chosen forge and tool. If it fails, tell the user what's missing in the confirmation summary. Don't block setup on it, because the user may install or connect the tool afterwards.
 
 ## Write Files
 
