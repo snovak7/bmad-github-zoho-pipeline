@@ -73,6 +73,8 @@ You'll be asked for:
 | `gzp_autotrack_bmad_loop` | Whether to auto-hook the unattended development loop, `bmad-build-auto` (defaults to yes at setup; projects configured before this option existed leave the loop untracked until reconfigured) — see [Auto-tracking the unattended loop](#auto-tracking-the-unattended-loop) |
 | `gzp_loop_auto_merge_pr` | Whether the pipeline merges its own PRs inside the unattended loop (defaults to yes; asked only when the loop hook is on; independent of `gzp_auto_merge_pr`) |
 
+Settings that belong to an option you didn't select are neither asked nor written: the Zoho settings exist only while the tracker is `zoho`, the Windshift settings only while it's `windshift`, and `gzp_forge_mcp_name` only while the forge tool is `mcp`. Switching an option in `configure` removes the other option's settings from both config files.
+
 Setup writes shared config to `_bmad/config.yaml`, personal settings to `_bmad/config.user.yaml` (gitignore this), and registers the module in `_bmad/module-help.csv`.
 
 ## Auto-tracking bmad-build
