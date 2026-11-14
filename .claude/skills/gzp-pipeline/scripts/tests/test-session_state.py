@@ -157,6 +157,31 @@ def test_load_migrates_legacy_mcp_tool_in_memory(tmp_path):
     assert payload["value"] == "mcp"
 
 
+def test_open_time_log_without_id_for_windshift(tmp_path):
+    state_file = tmp_path / "session-state.json"
+    run("init", "--path", str(state_file))
+    result = run("open-time-log", "--path", str(state_file), "--task-id", "PROJ-42",
+                 "--started-at", "09:10", "--started-on", "2026-11-14")
+    assert result.returncode == 0, result.stderr
+    data = json.loads(state_file.read_text())
+    assert data["open_time_logs"]["PROJ-42"] == {"time_log_id": None, "started_at": "09:10", "started_on": "2026-11-14"}
+    closed = parse_stdout(run("close-time-log", "--path", str(state_file), "--task-id", "PROJ-42"))
+    assert closed["closed_entry"]["started_on"] == "2026-11-14"
+
+
+def test_init_adds_windshift_fields_to_existing_state(tmp_path):
+    state_file = tmp_path / "session-state.json"
+    run("init", "--path", str(state_file))
+    data = json.loads(state_file.read_text())
+    del data["resolved"]["windshift_workspace_id"]
+    del data["resolved"]["tracker"]
+    state_file.write_text(json.dumps(data))
+    payload = parse_stdout(run("init", "--path", str(state_file)))
+    assert "added resolved.tracker" in payload["migrated"], payload
+    data = json.loads(state_file.read_text())
+    assert data["resolved"]["windshift_workspace_id"] is None
+
+
 def main():
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]
     failures = 0

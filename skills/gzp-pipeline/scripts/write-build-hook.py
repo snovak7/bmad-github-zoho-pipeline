@@ -13,7 +13,7 @@ so each needs its own hook.
 Writes two fields into the [workflow] table of the customize override:
 - activation_steps_prepend: an entry telling Build to hand task/time tracking to
   gzp-pipeline before its own steps run.
-- on_complete: an instruction telling Build to hand completion (GitHub Flow, Zoho
+- on_complete: an instruction telling Build to hand completion (GitHub Flow, tracker
   status, time-log close) to gzp-pipeline.
 
 Uses tomlkit so any existing file (comments, unrelated overrides, formatting) is
@@ -42,25 +42,26 @@ except ImportError:
 
 PREPEND_ENTRY = (
     "Invoke the gzp-pipeline skill before any other work: gzp-pipeline is the sole owner of "
-    "Zoho task status and time-log sessions. Let it resume in-flight state or start tracking "
-    "for this build (setting the relevant Zoho task 'In Progress' and opening a time-log "
+    "tracker task status and time-log sessions (Zoho Projects or Windshift). Let it resume "
+    "in-flight state or start tracking for this build (setting the relevant tracker task "
+    "'In Progress' and opening a time-log "
     "session) before Build proceeds to its own steps. Do not duplicate task/time tracking here."
 )
 
 ON_COMPLETE_TEXT = (
     "Invoke the gzp-pipeline skill to hand off completion of this build's work: it drives "
     "code-touching changes through GitHub Flow (branch, commit, push, PR — self-assigned, "
-    "labeled) if that has not already happened, updates the Zoho task's status, and closes "
+    "labeled) if that has not already happened, updates the tracker task's status, and closes "
     "out the time-log session opened at activation. Do not commit, push, open a PR, or touch "
-    "Zoho directly from Build's own steps — gzp-pipeline owns that lifecycle end to end.\n"
+    "the tracker directly from Build's own steps — gzp-pipeline owns that lifecycle end to end.\n"
 )
 
 # Unattended variants (bmad-build-auto): same ownership prefixes, plus the rule that
 # nothing in the handoff may wait on a human.
 UNATTENDED_PREPEND_ENTRY = (
     "Invoke the gzp-pipeline skill before any other work: gzp-pipeline is the sole owner of "
-    "Zoho task status and time-log sessions. Let it resume in-flight state or start tracking "
-    "for this iteration before this workflow proceeds to its own steps. This run is "
+    "tracker task status and time-log sessions (Zoho Projects or Windshift). Let it resume "
+    "in-flight state or start tracking for this iteration before this workflow proceeds to its own steps. This run is "
     "unattended: gzp-pipeline must not ask questions or wait for a human — if it cannot "
     "proceed (required config unresolved, or a prior task's PR still awaiting merge), it "
     "reports the blocker and this workflow must HALT with status blocked, naming that blocker. "
@@ -70,13 +71,13 @@ UNATTENDED_PREPEND_ENTRY = (
 UNATTENDED_ON_COMPLETE_TEXT = (
     "Invoke the gzp-pipeline skill to hand off completion of this iteration's work: it drives "
     "code-touching changes through GitHub Flow (tracking issue when configured, branch, commit, "
-    "push, PR — self-assigned, labeled) if that has not already happened, updates the Zoho "
+    "push, PR — self-assigned, labeled) if that has not already happened, updates the tracker "
     "task's status, and closes out the time-log session opened at activation. This run is "
     "unattended: at the merge gate gzp-pipeline accepts its own PR — it merges once checks "
     "are green (loop auto-merge, on by default) — and when the merge is blocked or loop "
     "auto-merge is off it leaves the PR open and returns; it never waits for a human and "
     "never forces a merge. Do not commit, "
-    "push, open a PR, or touch Zoho directly from this workflow's own steps — gzp-pipeline "
+    "push, open a PR, or touch the tracker directly from this workflow's own steps — gzp-pipeline "
     "owns that lifecycle end to end.\n"
 )
 

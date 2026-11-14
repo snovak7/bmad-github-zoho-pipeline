@@ -1,15 +1,15 @@
 # bmad-github-zoho-pipeline
 
-**Pipeline Forge** — a configurable Zoho Projects + GitHub Flow task pipeline for GitHub or Forgejo repos, packaged as a [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) module and Claude Code plugin.
+**Pipeline Forge** — a configurable task pipeline that tracks work in Zoho Projects or Windshift and drives it through GitHub Flow on GitHub or Forgejo repos, packaged as a [BMAD](https://github.com/bmad-code-org/BMAD-METHOD) module and Claude Code plugin.
 
-It acts as the operator of your repo's delivery pipeline: it plans work into a Zoho Projects task list, drives every code-touching task through GitHub Flow (optional tracking issue → branch → GPG-signed commits → PR → review → merge → close), and brackets every segment of work with paired Zoho time-log sessions. The forge is a setup choice — GitHub or Forgejo (Codeberg or self-hosted) — and so is the tool that drives it: an MCP server, or the forge's CLI (`gh` / `fj`). Each leg is a setup toggle: the Zoho workflow, GPG enforcement, issue-first flow, and PR auto-merge can each be turned on or off per project — everything on is the default; everything off leaves a plain GitHub Flow driver. State is tracked in `session-state.json`, so work can be resumed correctly across sessions, days, or a context reset — no skipped steps, no time-log session left open, no forge issue mistaken for a work item.
+It acts as the operator of your repo's delivery pipeline: it plans work into a phase list on your tracker (a Zoho Projects task list, or a parent work item in a Windshift workspace), drives every code-touching task through GitHub Flow (optional tracking issue → branch → GPG-signed commits → PR → review → merge → close), and brackets every segment of work with time-log sessions on the tracker. The forge is a setup choice — GitHub or Forgejo (Codeberg or self-hosted) — and so is the tool that drives it: an MCP server, or the forge's CLI (`gh` / `fj`). Each leg is a setup toggle: the tracker (or none), GPG enforcement, issue-first flow, and PR auto-merge can each be turned on or off per project — everything on is the default; everything off leaves a plain GitHub Flow driver. State is tracked in `session-state.json`, so work can be resumed correctly across sessions, days, or a context reset — no skipped steps, no time-log session left open, no forge issue mistaken for a work item.
 
 ## What it does
 
-- **Plans phases.** Breaks a chunk of work into a Zoho Projects task list under a logged Planning task, and mirrors the breakdown into a local todo list for in-session visibility.
-- **Drives tasks end to end.** Each task moves through In Progress → PR opened → In Review → merge-verified → Closed. Optionally issue-first: an issue is opened on the forge for each code-change task before branching, referenced by the branch and PR, and auto-closed by the merge (`gzp_issue_first`). Branch names are deterministic — `{type}/{zoho-id}-{forge}{issue}-{slug}`, e.g. `feat/ecm-t101-gh5-generic-toggles` on GitHub or `feat/ecm-t101-fj5-generic-toggles` on Forgejo — with the conventional-commit type (which sets the semver bump) leading and the Zoho/issue segments dropping out when those toggles are off.
-- **Self-assigns everything.** Every Zoho task it creates and every PR (and tracking issue) it opens is assigned to you automatically, with an appropriate label attached when one fits.
-- **Time-logs every segment.** Uses a paired start/stop pattern against Zoho's time-log API (Zoho has no live timer).
+- **Plans phases.** Breaks a chunk of work into a phase list on the tracker (Zoho task list or Windshift parent item) under a logged Planning task, and mirrors the breakdown into a local todo list for in-session visibility.
+- **Drives tasks end to end.** Each task moves through In Progress → PR opened → In Review → merge-verified → Closed. Optionally issue-first: an issue is opened on the forge for each code-change task before branching, referenced by the branch and PR, and auto-closed by the merge (`gzp_issue_first`). Branch names are deterministic — `{type}/{task-key}-{forge}{issue}-{slug}`, e.g. `feat/ecm-t101-gh5-generic-toggles` on GitHub or `feat/ecm-t101-fj5-generic-toggles` on Forgejo — with the conventional-commit type (which sets the semver bump) leading and the tracker/issue segments dropping out when those toggles are off.
+- **Self-assigns everything.** Every tracker task it creates and every PR (and tracking issue) it opens is assigned to you automatically, with an appropriate label attached when one fits.
+- **Time-logs every segment.** On Zoho, a paired start/stop pattern against the time-log API (Zoho has no live timer). On Windshift, the start is recorded locally and one finished worklog is booked against the workspace's time project when the segment ends (Windshift's MCP server can't edit a worklog afterwards, and allows only one running timer per user).
 - **Handles ad hoc requests and issues.** Small unplanned work and one-off "report an issue" flows are supported without forcing them into a task list.
 - **Resumes safely.** On activation it reads `session-state.json` first — never re-derives position from conversation history — and reports/resumes any task or time-log session left mid-flight.
 - **Never fabricates verification.** Status changes, merges, GPG signatures, and time-log entries must correspond to something actually checked or called.
@@ -20,7 +20,9 @@ See [`skills/gzp-pipeline/SKILL.md`](skills/gzp-pipeline/SKILL.md) for the full 
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code)
-- A Zoho Projects MCP server connected in your Claude Code session, exposing time-log tools (e.g. `add_time_log` / `update_single_time_log`) — only when the Zoho workflow is enabled (`gzp_zoho_workflow`, the default)
+- A tracker MCP server connected in your Claude Code session, unless the tracker is off (`gzp_tracker: none`):
+  - **Zoho Projects** (the default): a Zoho Projects MCP server exposing time-log tools (e.g. `add_time_log` / `update_single_time_log`).
+  - **Windshift:** your instance's built-in MCP server (the `/mcp` endpoint, enabled with `--mcp` or `MCP_ENABLED=true`), with the `mcp:access` permission for your user. The workspace needs a linked time project, or you name one in `gzp_windshift_time_project`.
 - [`uv`](https://docs.astral.sh/uv/) (used by the module's setup/config scripts)
 - A git repository with `commit.gpgsign` enabled, if GPG enforcement is on (`gzp_gpg_signing`, the default)
 - One forge tool for issues, PRs, and merges, picked at setup (`gzp_forge` + `gzp_forge_tool`):
@@ -54,10 +56,13 @@ You'll be asked for:
 
 | Setting | Purpose |
 | --- | --- |
-| `gzp_zoho_workflow` | Whether the Zoho Projects side runs at all — tasks, statuses, and time logs (defaults to yes; when off, the pipeline is a pure GitHub Flow driver, the three Zoho questions below are skipped, and pairing with `gzp_issue_first` is recommended so each task still has a durable record) |
-| `gzp_zoho_mcp_name` | Which Zoho Projects MCP server to use for tasks and time-logging (asked only when the Zoho workflow is on; configs from before 1.3.0 that still say `gzp_mcp_name` are migrated on first activation) |
-| `gzp_zoho_project_name` | The Zoho Projects project this repo's work is tracked against (asked only when the Zoho workflow is on) |
-| `gzp_default_bill_status` | Default bill status for time-log entries (defaults to "Non Billable"; asked only when the Zoho workflow is on) |
+| `gzp_tracker` | Which tracker holds work items, statuses, and time logs: `zoho` (default), `windshift`, or `none` (a pure GitHub Flow driver; pairing with `gzp_issue_first` is then recommended so each task still has a durable record). Configs from before 1.6.0 with `gzp_zoho_workflow: false` are migrated to `none` |
+| `gzp_zoho_mcp_name` | Which Zoho Projects MCP server to use for tasks and time-logging (asked only when the tracker is `zoho`; configs from before 1.3.0 that still say `gzp_mcp_name` are migrated on first activation) |
+| `gzp_zoho_project_name` | The Zoho Projects project this repo's work is tracked against (asked only when the tracker is `zoho`) |
+| `gzp_default_bill_status` | Default bill status for time-log entries (defaults to "Non Billable"; asked only when the tracker is `zoho`) |
+| `gzp_windshift_mcp_name` | Which Windshift MCP server to use for work items and time logs (personal setting; asked only when the tracker is `windshift`) |
+| `gzp_windshift_workspace_name` | The Windshift workspace this repo's work is tracked in (asked only when the tracker is `windshift`) |
+| `gzp_windshift_time_project` | The Windshift time project to book against; leave empty to use the workspace's linked time project (asked only when the tracker is `windshift`) |
 | `gzp_forge` | Which forge hosts the repo: `github` (default) or `forgejo` |
 | `gzp_forge_tool` | How the forge is driven: `mcp` (default) or `cli` (`gh` for GitHub, `fj` for Forgejo). Personal setting; configs from before 1.5.0 keep the old MCP-then-`gh` fallback until reconfigured |
 | `gzp_forge_mcp_name` | Which MCP server to use for the forge (asked only when `gzp_forge_tool` is `mcp`; a pre-1.5.0 `gzp_github_mcp_name` is migrated automatically) |
@@ -74,8 +79,8 @@ Setup writes shared config to `_bmad/config.yaml`, personal settings to `_bmad/c
 
 If you use [`bmad-build`](https://github.com/bmad-code-org/BMAD-METHOD) to implement work and answer yes to `gzp_autotrack_bmad_build` during setup, Pipeline Forge writes a hook into `_bmad/custom/bmad-build.toml`:
 
-- **Before Build starts** (`activation_steps_prepend`) — hands off to gzp-pipeline to resume or start Zoho task status + time-log tracking.
-- **After Build completes** (`on_complete`) — hands off to gzp-pipeline to drive the change through GitHub Flow (branch, commit, push, self-assigned PR with a label), update the Zoho task's status, and close the time-log session.
+- **Before Build starts** (`activation_steps_prepend`) — hands off to gzp-pipeline to resume or start tracker task status + time-log tracking.
+- **After Build completes** (`on_complete`) — hands off to gzp-pipeline to drive the change through GitHub Flow (branch, commit, push, self-assigned PR with a label), update the tracker task's status, and close the time-log session.
 
 This means `bmad-build` runs get tracked automatically, without ever typing "gzp-pipeline." A few things to know:
 
@@ -102,7 +107,7 @@ The install, self-heal, `skipped`, conflict, and "answer no to remove it" behavi
 
 Once installed and configured, just talk to it:
 
-- **"Start a new phase"** — plan and break down a new chunk of work into a tracked Zoho task list.
+- **"Start a new phase"** — plan and break down a new chunk of work into a tracked phase list on the tracker.
 - **"Work the next task"** / **"continue"** — pick up the next task, or resume one already in progress.
 - **"Report an issue"** — file a standalone issue on the forge outside the task pipeline.
 - **"Configure"** — re-run setup to change project/config values.

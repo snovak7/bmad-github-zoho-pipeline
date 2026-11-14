@@ -9,6 +9,7 @@
   "keywords": [
     "bmad",
     "zoho",
+    "windshift",
     "github",
     "forgejo",
     "time-tracking",
@@ -19,8 +20,8 @@
     {
       "name": "gzp",
       "source": "./",
-      "description": "Configurable Zoho Projects + GitHub Flow task pipeline: plans, tracks, and time-logs every phase of work in Zoho, drives implementation tasks through GitHub Flow on GitHub or Forgejo (MCP or gh/fj CLI) per repo config, and handles ad hoc forge issues as standalone reporting artifacts.",
-      "version": "1.5.0",
+      "description": "Configurable Zoho Projects / Windshift + GitHub Flow task pipeline: plans, tracks, and time-logs every phase of work in Zoho Projects or Windshift, drives implementation tasks through GitHub Flow on GitHub or Forgejo (MCP or gh/fj CLI) per repo config, and handles ad hoc forge issues as standalone reporting artifacts.",
+      "version": "1.6.0",
       "author": {
         "name": "Simon Novak"
       },

@@ -53,6 +53,10 @@ Ask using the prompt with its default value. Apply `result` templates when stori
 
 **Legacy keys (before 1.5.0)**: an existing `gzp_github_mcp_name` (in `config.user.yaml`) is the default for `gzp_forge_mcp_name`, and an existing `gzp_github_issue_first` (in the `gzp` section) is the default for `gzp_issue_first`. When `gzp_forge_tool` has no existing value, default it to `mcp` if a legacy `gzp_github_mcp_name` is set and `cli` otherwise. `gzp_forge` defaults to `github` for these configs. After the scripts below run, delete `gzp_github_mcp_name` from `config.user.yaml`. The `config.yaml` section is rewritten fresh, so the old issue-first key disappears there on its own.
 
+**Legacy keys (before 1.6.0)**: an existing `gzp_zoho_workflow` is the default for `gzp_tracker`: `false` becomes `none`, and `true` (or unset, on a configured project) becomes `zoho`. The `config.yaml` section is rewritten fresh, so the old key disappears on its own.
+
+**Tracker check**: when `gzp_tracker` is `zoho` or `windshift`, confirm that the named MCP server is connected and run the Resolve-at-activation steps from `references/tracker-tooling.md` for it. For Windshift, that means the workspace name matches, the workspace has a time project (or `gzp_windshift_time_project` names one), and the status roles map. Report anything missing in the confirmation summary. Don't block setup on it.
+
 **Forge tool check**: after the forge questions, run the availability check from `references/forge-tooling.md` (Resolve at activation, step 2) for the chosen forge and tool. If it fails, tell the user what's missing in the confirmation summary. Don't block setup on it, because the user may install or connect the tool afterwards.
 
 ## Write Files

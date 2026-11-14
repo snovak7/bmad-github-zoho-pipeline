@@ -14,6 +14,7 @@ Schema (all keys always present; unset scalars are null):
 
 {
   "resolved": {
+    "tracker": "zoho"|"windshift"|"none"|null,
     "zoho_mcp_name": str|null,
     "forge": "github"|"forgejo"|null,
     "forge_tool": "mcp"|"cli"|null,
@@ -25,11 +26,16 @@ Schema (all keys always present; unset scalars are null):
     "repo_host": str|null,
     "repo_owner": str|null,
     "repo_name": str|null,
-    "zoho_user": {"zuid": int, "zpuid": str, "name": str}|null
+    "zoho_user": {"zuid": int, "zpuid": str, "name": str}|null,
+    "windshift_workspace_id": int|null,
+    "windshift_workspace_key": str|null,
+    "windshift_time_project_id": int|null,
+    "windshift_user_id": int|null,
+    "windshift_timezone": str|null
   },
   "current_task_list": {"id": str|null, "name": str|null},
   "current_task": {"id": str|null, "title": str|null, "step": str|null, "issue_number": int|null, "branch": str|null, "pr_number": int|null},
-  "open_time_logs": {<task_id>: {"time_log_id": str, "started_at": str}, ...},
+  "open_time_logs": {<task_id>: {"time_log_id": str|null, "started_at": str, "started_on": str|null}, ...},
   "issue_tasks": [
     {"issue_number": int, "task_id": str, "time_log_id": str|null, "status": "open"|"closed"}
   ]
@@ -42,7 +48,10 @@ forge_tool "mcp" (forge "github"). Missing keys are filled from the defaults.
 `init` on an existing file persists the migration.
 
 open_time_logs is keyed by task_id, not a single slot — the primary task and
-any in-flight issue-task can each have their own open session at once (see
+any in-flight issue-task can each have their own open session at once. A
+Windshift session has no time_log_id until it is booked at stop (the worklog
+is created in one call), so time_log_id is optional and started_on records the
+local date the session began (see
 references/issue-report.md), and closing one must never touch another's.
 
 Commands:
@@ -75,6 +84,7 @@ from pathlib import Path
 
 DEFAULT_STATE = {
     "resolved": {
+        "tracker": None,
         "zoho_mcp_name": None,
         "forge": None,
         "forge_tool": None,
@@ -87,6 +97,11 @@ DEFAULT_STATE = {
         "repo_owner": None,
         "repo_name": None,
         "zoho_user": None,
+        "windshift_workspace_id": None,
+        "windshift_workspace_key": None,
+        "windshift_time_project_id": None,
+        "windshift_user_id": None,
+        "windshift_timezone": None,
     },
     "current_task_list": {"id": None, "name": None},
     "current_task": {"id": None, "title": None, "step": None, "issue_number": None, "branch": None, "pr_number": None},
@@ -221,7 +236,7 @@ def cmd_open_time_log(args) -> int:
         raise StateError(
             {"ok": False, "error": f"task_id '{args.task_id}' already has an open time-log session"}
         )
-    entry = {"time_log_id": args.time_log_id, "started_at": args.started_at}
+    entry = {"time_log_id": args.time_log_id, "started_at": args.started_at, "started_on": args.started_on}
     state["open_time_logs"][args.task_id] = entry
     write_state(path, state)
     print(json.dumps({"ok": True, "task_id": args.task_id, "entry": entry}))
@@ -304,8 +319,9 @@ def main() -> int:
     p_open = sub.add_parser("open-time-log", help="Record a newly-started time-log session for a task_id")
     p_open.add_argument("--path", required=True)
     p_open.add_argument("--task-id", required=True)
-    p_open.add_argument("--time-log-id", required=True)
+    p_open.add_argument("--time-log-id", help="Tracker time-log id (Zoho); omit for Windshift, which books at stop")
     p_open.add_argument("--started-at", required=True)
+    p_open.add_argument("--started-on", help="Local date the session began (YYYY-MM-DD); needed for Windshift")
     p_open.set_defaults(func=cmd_open_time_log)
 
     p_closelog = sub.add_parser("close-time-log", help="Remove a task_id's open time-log session")
