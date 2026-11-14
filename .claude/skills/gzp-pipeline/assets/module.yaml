@@ -1,7 +1,7 @@
 code: gzp
 name: "Pipeline Forge"
 description: "Configurable Zoho Projects / Windshift + GitHub Flow task pipeline: plans, tracks, and time-logs work in Zoho Projects or Windshift (optional per project), drives implementation tasks through GitHub Flow on GitHub or Forgejo (via MCP or the gh/fj CLI) per repo config — issue-first flow, GPG enforcement, and PR auto-merge each a setup toggle — and handles ad hoc forge issues as standalone reporting artifacts."
-module_version: 1.6.1
+module_version: 1.6.2
 default_selected: false
 module_greeting: >
   Pipeline Forge is ready. Say "start a new phase" to break your next chunk of work into a
