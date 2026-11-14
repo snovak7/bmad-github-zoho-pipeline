@@ -10,6 +10,14 @@ the shared config.yaml (core values at root + module section) and config.user.ya
 (user_name, communication_language, plus any module variable with user_setting: true).
 Uses an anti-zombie pattern for the module section in config.yaml.
 
+Conditional variables: a module variable with `asked_when` is only written while
+its condition holds — `asked_when: <field>` (field truthy) or
+`asked_when: "<field> == <value>"`. When it doesn't, the variable is left out of
+the module section and removed from config.user.yaml, so settings that belong to
+an unselected option (e.g. Zoho keys while Windshift is the tracker) never linger.
+Variables with `user_setting: true` go only to config.user.yaml, never into the
+shared module section.
+
 Legacy migration: when --legacy-dir is provided, reads old per-module config files
 from {legacy-dir}/{module-code}/config.yaml and {legacy-dir}/core/config.yaml.
 Matching values serve as fallback defaults (answers override them). After a
@@ -221,6 +229,65 @@ def apply_result_templates(
     return transformed
 
 
+def _truthy(value) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() not in ("", "false", "no", "0", "none", "null")
+    return bool(value)
+
+
+def _parse_condition(condition: str) -> tuple[str, str | None]:
+    """Split an asked_when expression into (field, expected value or None)."""
+    if "==" in condition:
+        field, expected = condition.split("==", 1)
+        return field.strip(), expected.strip().strip("'\"")
+    return condition.strip(), None
+
+
+def resolve_active_variables(
+    module_yaml: dict, module_answers: dict, existing_values: dict
+) -> tuple[set, set]:
+    """Return (active, inactive) module variable names.
+
+    Conditions are evaluated in module.yaml order. A gating field's value comes
+    from the answers, else the existing config, else its module.yaml default; a
+    gating field that is itself inactive counts as unset.
+    """
+    active: set = set()
+    inactive: set = set()
+    effective: dict = {}
+    for name, var_def in module_yaml.items():
+        if not isinstance(var_def, dict) or "prompt" not in var_def and "default" not in var_def:
+            continue
+        condition = var_def.get("asked_when")
+        holds = True
+        if condition:
+            field, expected = _parse_condition(str(condition))
+            value = None if field in inactive else effective.get(field)
+            if expected is None:
+                holds = _truthy(value)
+            else:
+                holds = value is not None and str(value).strip().lower() == expected.lower()
+        if holds:
+            active.add(name)
+            if name in module_answers:
+                effective[name] = module_answers[name]
+            elif name in existing_values:
+                effective[name] = existing_values[name]
+            else:
+                effective[name] = var_def.get("default")
+        else:
+            inactive.add(name)
+    return active, inactive
+
+
+def user_setting_keys(module_yaml: dict) -> set:
+    return {
+        name
+        for name, var_def in module_yaml.items()
+        if isinstance(var_def, dict) and var_def.get("user_setting") is True
+    }
+
+
 def merge_config(
     existing_config: dict,
     module_yaml: dict,
@@ -282,7 +349,8 @@ def merge_config(
     module_answers = apply_result_templates(
         module_yaml, answers.get("module", {}), verbose
     )
-    module_section.update(module_answers)
+    user_keys = user_setting_keys(module_yaml)
+    module_section.update({k: v for k, v in module_answers.items() if k not in user_keys})
 
     if verbose:
         print(
@@ -402,16 +470,34 @@ def main():
             if args.verbose:
                 print("Applied legacy values as fallback defaults", file=sys.stderr)
 
+    # Drop answers for variables whose asked_when condition doesn't hold
+    module_code = module_yaml.get("code", "")
+    existing_user_config = load_yaml_file(args.user_config_path)
+    existing_values = dict(existing_config.get(module_code) or {})
+    existing_values.update(existing_user_config)
+    _, inactive = resolve_active_variables(
+        module_yaml, answers.get("module", {}), existing_values
+    )
+    if inactive:
+        answers = dict(answers)
+        answers["module"] = {
+            k: v for k, v in answers.get("module", {}).items() if k not in inactive
+        }
+
     # Merge and write config.yaml
     updated_config = merge_config(existing_config, module_yaml, answers, args.verbose)
     write_config(updated_config, args.config_path, args.verbose)
 
     # Merge and write config.user.yaml
     user_settings = extract_user_settings(module_yaml, answers)
-    existing_user_config = load_yaml_file(args.user_config_path)
     updated_user_config = dict(existing_user_config)
+    user_keys_removed = sorted(
+        k for k in inactive & user_setting_keys(module_yaml) if k in updated_user_config
+    )
+    for key in user_keys_removed:
+        del updated_user_config[key]
     updated_user_config.update(user_settings)
-    if user_settings:
+    if user_settings or user_keys_removed:
         write_config(updated_user_config, args.user_config_path, args.verbose)
 
     # Legacy cleanup: delete old per-module config files
@@ -431,6 +517,8 @@ def main():
         "core_updated": bool(answers.get("core")),
         "module_keys": list(updated_config.get(module_code, {}).keys()),
         "user_keys": list(user_settings.keys()),
+        "inactive_keys": sorted(inactive),
+        "user_keys_removed": user_keys_removed,
         "legacy_configs_found": legacy_files_found,
         "legacy_configs_deleted": legacy_deleted,
     }
